@@ -21,9 +21,18 @@
 #define LOG_VERBOSE_ENABLED 1
 #include "utility/logger.h"
 
+#include <map>
+
 namespace beam
 {
-    class WalletServer
+    struct ConnectionToServer 
+    {
+        virtual ~ConnectionToServer() = default;
+
+        virtual void on_bad_peer(uint64_t from) = 0;
+    };
+
+    class WalletServer : public ConnectionToServer
     {
     public:
         WalletServer(io::Reactor& reactor, io::Address listenTo)
@@ -56,17 +65,70 @@ namespace beam
 
         }
 
+    protected:
+
+        void on_bad_peer(uint64_t from) override
+        {
+            _connections.erase(from);
+        }
+
     private:
 
         void on_stream_accepted(io::TcpStream::Ptr&& newStream, io::ErrorCode errorCode)
         {
+            if (errorCode == 0) 
+            {
+                auto peer = newStream->peer_address();
+                LOG_DEBUG() << "+peer " << peer;
+
+                _connections[peer.u64()] = std::make_unique<Connection>(*this, peer.u64(), std::move(newStream));
+            }
+
             LOG_DEBUG() << "on_stream_accepted";
         }
 
     private:
+        class Connection
+        {
+        public:
+            Connection(ConnectionToServer& owner, uint64_t id, io::TcpStream::Ptr&& newStream)
+                : _owner(owner)
+                , _id(id)
+                , _stream(std::move(newStream))
+            {
+                _stream->enable_keepalive(2);
+                _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
+            }
+
+            bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size)
+            {
+                if (errorCode != 0) 
+                {
+                    LOG_INFO() << "peer disconnected, code=" << io::error_str(errorCode);
+                    _owner.on_bad_peer(_id);
+                    return false;
+                }
+
+                std::string msg((const char*)data, size);
+
+                LOG_INFO() << "new data from client: " << msg;
+
+                std::string res = "goodbye, beam client!\n";
+
+                _stream->write(res.data(), res.length());
+
+                return true;
+            }
+        private:
+            ConnectionToServer& _owner;
+            uint64_t _id;
+            io::TcpStream::Ptr _stream;
+        };
+
         io::Reactor& _reactor;
         io::TcpServer::Ptr _server;
         io::Address _bindAddress;
+        std::map<uint64_t, std::unique_ptr<Connection>> _connections;
     };
 }
 

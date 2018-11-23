@@ -67,18 +67,35 @@ namespace beam
             _connection = std::move(newStream);
             _connection->enable_keepalive(2);
             _connection->enable_read(BIND_THIS_MEMFN(on_stream_data));
+
+            {
+                std::string handshake = "hello, beam wallet!\n";
+
+                LOG_VERBOSE() << "writing: " << handshake;
+
+                auto result = _connection->write(handshake.c_str(), handshake.length());
+
+                if (!result) {
+                    on_disconnected(result.error());
+                }
+            }
         }
 
         bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size) 
         {
-            if (errorCode != 0) {
+            if (errorCode != 0) 
+            {
                 on_disconnected(errorCode);
                 return false;
             }
 
-            //if (!_lineProtocol.new_data_from_stream(data, size)) {
-            //    //TODO stream corrupted
-            //}
+            std::string msg((const char*)data, size);
+
+            LOG_INFO() << "new data from server: " << msg;
+
+            LOG_INFO() << "closing connection and exit";
+            _reactor.stop();
+
             return true;
         }
 
@@ -88,7 +105,6 @@ namespace beam
         io::Timer::Ptr _timer;
         io::TcpStream::Ptr _connection;
     };
-
 }
 
 using namespace beam;
