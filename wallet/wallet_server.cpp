@@ -24,6 +24,7 @@
 #include <map>
 #include "nlohmann/json.hpp"
 #include "p2p/json_serializer.h"
+#include "p2p/line_protocol.h"
 
 using json = nlohmann::json;
 
@@ -120,9 +121,64 @@ namespace beam
                 : _owner(owner)
                 , _id(id)
                 , _stream(std::move(newStream))
+                , _lineProtocol(BIND_THIS_MEMFN(on_raw_message), BIND_THIS_MEMFN(on_write))
             {
                 _stream->enable_keepalive(2);
                 _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
+            }
+
+            void on_write(io::SharedBuffer&& msg) 
+            {
+                _stream->write(msg);
+            }
+
+            bool on_raw_message(void* data, size_t size) 
+            {
+                LOG_INFO() << "got " << std::string((char*)data, size);
+
+                {
+                    json o;
+                    auto result = parse_json(data, size, o);
+
+                    if (result != 0)
+                    {
+                        return false;
+                    }
+
+                    LOG_INFO() << "new data from client: " << "method = " << o["method"];
+
+                    if (o["method"] == "hello")
+                    {
+                        json msg
+                        { 
+                            {"jsonrpc", "2.0"}, 
+                            {"method" , "hello"} 
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
+                        _lineProtocol.finalize();
+                    }
+                    else if (o["method"] == "poll")
+                    {
+                        json msg
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"method" , "bye"}
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
+                        _lineProtocol.finalize();
+                    }
+                    else
+                    {
+                        LOG_ERROR() << "Unknown method, closing connection...";
+                        // close connection here
+                        // {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Procedure not found."}, "id": 10}
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size)
@@ -134,27 +190,11 @@ namespace beam
                     return false;
                 }
 
+                if (!_lineProtocol.new_data_from_stream(data, size)) 
                 {
-                    json o;
-                    auto result = parse_json(data, size, o);
-
-                    if (result != 0)
-                    {
-                        return false;
-                    }
-
-                    LOG_INFO() << "new data from client: " << "jsonrpc = " << o["jsonrpc"];
-                }
-
-                {
-                    io::SerializedMsg currentMsg;
-                    io::FragmentWriter fw(4096, 0, [&](io::SharedBuffer&& buf) { currentMsg.push_back(buf); });
-
-                    json msg{ {"jsonrpc", "2.0"}, {"method" , "bye"} };
-                    //msg["jsonrpc"] = "2.0";
-                    serialize_json_msg(fw, msg);
-
-                    _stream->write(currentMsg);
+                    LOG_INFO() << "stream corrupted";
+                    _owner.on_bad_peer(_id);
+                    return false;
                 }
 
                 return true;
@@ -163,6 +203,7 @@ namespace beam
             ConnectionToServer& _owner;
             uint64_t _id;
             io::TcpStream::Ptr _stream;
+            LineProtocol _lineProtocol;
         };
 
         io::Reactor& _reactor;

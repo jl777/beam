@@ -24,8 +24,30 @@
 #include "utility/io/timer.h"
 #include "nlohmann/json.hpp"
 #include "p2p/json_serializer.h"
+#include "p2p/line_protocol.h"
 
 using json = nlohmann::json;
+
+namespace
+{
+    int parse_json(const void* buf, size_t bufSize, json& o)
+    {
+        if (bufSize == 0) return -30000;
+
+        const char* bufc = (const char*)buf;
+
+        try
+        {
+            o = json::parse(bufc, bufc + bufSize);
+        }
+        catch (const std::exception& e)
+        {
+            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
+            return -30000;
+        }
+        return 0; // OK
+    }
+}
 
 namespace beam
 {
@@ -38,8 +60,65 @@ namespace beam
             : _reactor(reactor)
             , _serverAddress(serverAddress)
             , _timer(io::Timer::create(_reactor))
+            , _lineProtocol(BIND_THIS_MEMFN(on_raw_message), BIND_THIS_MEMFN(on_write))
         {
             _timer->start(0, false, BIND_THIS_MEMFN(on_reconnect));
+        }
+
+        bool on_raw_message(void* data, size_t size)
+        {
+            json o;
+            auto result = parse_json(data, size, o);
+
+            if (result == 0)
+            {
+                LOG_INFO() << "new data from server: " << "method = " << o["method"];
+
+                if (o["method"] == "hello")
+                {
+                    {
+                        json msg
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"method", "poll"}
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
+                    }
+
+                    _lineProtocol.finalize();
+
+                    LOG_INFO() << "call POLL method";
+                }
+                else if (o["method"] == "bye")
+                {
+                    LOG_INFO() << "closing connection and exit";
+                    _reactor.stop();
+                }
+                else
+                {
+                    LOG_ERROR() << "Unknown method, closing connection...";
+                    // close connection here
+                    return false;
+                }
+            }
+            else
+            {
+                LOG_ERROR() << "stream corrupted.";
+                return false;
+            }
+
+            return true;
+        }
+
+        void on_write(io::SharedBuffer&& msg)
+        {
+            auto result = _stream->write(msg);
+
+            if (!result)
+            {
+                on_disconnected(result.error());
+            }
         }
 
         void on_reconnect() 
@@ -55,7 +134,7 @@ namespace beam
         void on_disconnected(io::ErrorCode error) 
         {
             LOG_INFO() << "disconnected, error=" << io::error_str(error) << ", rescheduling";
-            _connection.reset();
+            _stream.reset();
             _timer->start(RECONNECT_TIMEOUT, false, BIND_THIS_MEMFN(on_reconnect));
         }
 
@@ -68,25 +147,21 @@ namespace beam
             }
 
             LOG_INFO() << "connected to " << _serverAddress;
-            _connection = std::move(newStream);
-            _connection->enable_keepalive(2);
-            _connection->enable_read(BIND_THIS_MEMFN(on_stream_data));
+            _stream = std::move(newStream);
+            _stream->enable_keepalive(2);
+            _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
 
             {
-                io::SerializedMsg currentMsg;
-                io::FragmentWriter fw(4096, 0, [&](io::SharedBuffer&& buf) { currentMsg.push_back(buf); });
+                json msg
+                { 
+                    {"jsonrpc", "2.0"}, 
+                    {"method", "hello"}
+                };
 
-                json msg{ {"jsonrpc", "2.0"} };
-                //msg["jsonrpc"] = "2.0";
-                serialize_json_msg(fw, msg);
-
-                auto result = _connection->write(currentMsg);
-
-                if (!result) 
-                {
-                    on_disconnected(result.error());
-                }
+                serialize_json_msg(_lineProtocol, msg);
             }
+
+            _lineProtocol.finalize();
         }
 
         bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size) 
@@ -97,12 +172,7 @@ namespace beam
                 return false;
             }
 
-            std::string msg((const char*)data, size);
-
-            LOG_INFO() << "new data from server: " << msg;
-
-            LOG_INFO() << "closing connection and exit";
-            _reactor.stop();
+            _lineProtocol.new_data_from_stream(data, size);
 
             return true;
         }
@@ -111,7 +181,8 @@ namespace beam
         io::Reactor& _reactor;
         io::Address _serverAddress;
         io::Timer::Ptr _timer;
-        io::TcpStream::Ptr _connection;
+        io::TcpStream::Ptr _stream;
+        LineProtocol _lineProtocol;
     };
 }
 
