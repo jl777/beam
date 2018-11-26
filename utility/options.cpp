@@ -31,9 +31,9 @@ namespace beam
         const char* HELP_FULL = "help,h";
         const char* PORT = "port";
         const char* PORT_FULL = "port,p";
+        const char* STRATUM_PORT = "stratum_port";
         const char* STORAGE = "storage";
         const char* WALLET_STORAGE = "wallet_path";
-        const char* BBS_STORAGE = "bbs_keystore_path";
         const char* HISTORY = "history_dir";
         const char* TEMP = "temp_dir";
         const char* IMPORT = "import";
@@ -103,6 +103,7 @@ namespace beam
             (cli::HELP_FULL, "list of all options")
             //(cli::MODE, po::value<string>()->required(), "mode to execute [node|wallet]")
             (cli::PORT_FULL, po::value<uint16_t>()->default_value(10000), "port to start the server on")
+            (cli::STRATUM_PORT, po::value<uint16_t>()->default_value(0), "port to start stratum server on")
             (cli::WALLET_SEED, po::value<string>(), "secret key generation seed")
             (cli::WALLET_PHRASES, po::value<string>(), "phrases to generate secret key according to BIP-39. <wallet_seed> option will be ignored")
             (cli::LOG_LEVEL, po::value<string>(), "log level [info|debug|verbose]")
@@ -136,7 +137,6 @@ namespace beam
             (cli::NODE_ADDR_FULL, po::value<string>(), "address of node")
             (cli::TREASURY_BLOCK, po::value<string>()->default_value("treasury.mw"), "Block to create/append treasury to")
             (cli::WALLET_STORAGE, po::value<string>()->default_value("wallet.db"), "path to wallet file")
-            (cli::BBS_STORAGE, po::value<string>()->default_value("bbs_keys.db"), "path to file with bbs keys")
             (cli::TX_HISTORY, "print transacrions' history in info command")
             (cli::LISTEN, "start listen after new_addr command")
             (cli::TX_ID, po::value<string>()->default_value(""), "tx id")

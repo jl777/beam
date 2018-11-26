@@ -110,7 +110,9 @@ bool Server::on_solution(uint64_t from, const Solution& sol) {
     if (sol.id != _job.id) {
         LOG_INFO() << "ignoring solution to " << sol.id << " from " << io::Address::from_u64(from) << ", current is " << _job.id;
     }
+    LOG_DEBUG() << TRACE(sol.nonce) << TRACE(sol.output);
     sol.fill_pow(_job.pow);
+
     LOG_INFO() << "solution to " << sol.id << " from " << io::Address::from_u64(from);
     _job.onBlockFound();
     return true;
@@ -145,8 +147,8 @@ void Server::new_job(
         }
     }
 
-    for (auto id : _deadConnections) {
-        _connections.erase(id);
+    for (auto connectionId : _deadConnections) {
+        _connections.erase(connectionId);
     }
     _deadConnections.clear();
 

@@ -24,6 +24,8 @@
 #include "utility/helpers.h"
 #include <iomanip>
 
+#include "pow/external_pow.h"
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <iterator>
@@ -134,6 +136,16 @@ int main_impl(int argc, char* argv[])
 					}
 				);
 
+				std::unique_ptr<IExternalPOW> stratumServer;
+				auto stratumPort = vm[cli::STRATUM_PORT].as<uint16_t>();
+
+				if (stratumPort > 0) {
+					IExternalPOW::Options powOptions;
+                    powOptions.certFile = PROJECT_SOURCE_DIR "/utility/unittest/test.crt";
+                    powOptions.privKeyFile = PROJECT_SOURCE_DIR "/utility/unittest/test.key";
+					stratumServer = IExternalPOW::create(powOptions, *reactor, io::Address().port(stratumPort));
+				}
+
 				{
 					beam::Node node;
 
@@ -158,13 +170,13 @@ int main_impl(int argc, char* argv[])
 					node.m_Cfg.m_VerificationThreads = vm[cli::VERIFICATION_THREADS].as<int>();
 					if (node.m_Cfg.m_MiningThreads > 0)
 					{
-						std::shared_ptr<ECC::HKdf> pKdf(new ECC::HKdf);
-						node.m_pKdf = pKdf;
-
-						if (!beam::read_wallet_seed(pKdf->m_Secret, vm)) {
+						ECC::NoLeak<ECC::uintBig> seed;
+						if (!beam::read_wallet_seed(seed, vm)) {
                             LOG_ERROR() << " wallet seed is not provided. You have pass wallet seed for mining node.";
                             return -1;
                         }
+
+						node.m_Keys.InitSingleKey(seed.V);
 					}
 
 					std::vector<std::string> vPeers = getCfgPeers(vm);
@@ -216,7 +228,7 @@ int main_impl(int argc, char* argv[])
 					if (vm.count(cli::RESYNC))
 						node.m_Cfg.m_Sync.m_ForceResync = vm[cli::RESYNC].as<bool>();
 
-					node.Initialize();
+					node.Initialize(stratumServer.get());
 
 					Height hImport = vm[cli::IMPORT].as<Height>();
 					if (hImport)
