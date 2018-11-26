@@ -22,6 +22,10 @@
 #include "utility/logger.h"
 
 #include "utility/io/timer.h"
+#include "nlohmann/json.hpp"
+#include "p2p/json_serializer.h"
+
+using json = nlohmann::json;
 
 namespace beam
 {
@@ -69,13 +73,17 @@ namespace beam
             _connection->enable_read(BIND_THIS_MEMFN(on_stream_data));
 
             {
-                std::string handshake = "hello, beam wallet!\n";
+                io::SerializedMsg currentMsg;
+                io::FragmentWriter fw(4096, 0, [&](io::SharedBuffer&& buf) { currentMsg.push_back(buf); });
 
-                LOG_VERBOSE() << "writing: " << handshake;
+                json msg{ {"jsonrpc", "2.0"} };
+                //msg["jsonrpc"] = "2.0";
+                serialize_json_msg(fw, msg);
 
-                auto result = _connection->write(handshake.c_str(), handshake.length());
+                auto result = _connection->write(currentMsg);
 
-                if (!result) {
+                if (!result) 
+                {
                     on_disconnected(result.error());
                 }
             }

@@ -22,6 +22,31 @@
 #include "utility/logger.h"
 
 #include <map>
+#include "nlohmann/json.hpp"
+#include "p2p/json_serializer.h"
+
+using json = nlohmann::json;
+
+namespace
+{
+    int parse_json(const void* buf, size_t bufSize, json& o) 
+    {
+        if (bufSize == 0) return -30000;
+
+        const char* bufc = (const char*)buf;
+
+        try 
+        {
+            o = json::parse(bufc, bufc + bufSize);
+        }
+        catch (const std::exception& e) 
+        {
+            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
+            return -30000;
+        }
+        return 0; // OK
+    }
+}
 
 namespace beam
 {
@@ -109,13 +134,28 @@ namespace beam
                     return false;
                 }
 
-                std::string msg((const char*)data, size);
+                {
+                    json o;
+                    auto result = parse_json(data, size, o);
 
-                LOG_INFO() << "new data from client: " << msg;
+                    if (result != 0)
+                    {
+                        return false;
+                    }
 
-                std::string res = "goodbye, beam client!\n";
+                    LOG_INFO() << "new data from client: " << "jsonrpc = " << o["jsonrpc"];
+                }
 
-                _stream->write(res.data(), res.length());
+                {
+                    io::SerializedMsg currentMsg;
+                    io::FragmentWriter fw(4096, 0, [&](io::SharedBuffer&& buf) { currentMsg.push_back(buf); });
+
+                    json msg{ {"jsonrpc", "2.0"}, {"method" , "bye"} };
+                    //msg["jsonrpc"] = "2.0";
+                    serialize_json_msg(fw, msg);
+
+                    _stream->write(currentMsg);
+                }
 
                 return true;
             }
