@@ -72,34 +72,43 @@ namespace beam
 
             if (result == 0)
             {
-                LOG_INFO() << "new data from server: " << "method = " << o["method"];
-
-                if (o["method"] == "hello")
+                if (o["error"] != nullptr)
                 {
-                    {
-                        json msg
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"method", "poll"}
-                        };
-
-                        serialize_json_msg(_lineProtocol, msg);
-                    }
-
-                    _lineProtocol.finalize();
-
-                    LOG_INFO() << "call POLL method";
-                }
-                else if (o["method"] == "bye")
-                {
-                    LOG_INFO() << "closing connection and exit";
+                    LOG_ERROR() << "error data from server: " << "error.code = " << o["error"]["code"] << " erroer.message = " << o["error"]["message"];
                     _reactor.stop();
-                }
-                else
-                {
-                    LOG_ERROR() << "Unknown method, closing connection...";
-                    // close connection here
                     return false;
+                }
+                else if(o["result"] != nullptr)
+                {
+                    LOG_INFO() << "new data from server: " << "result = " << o["result"];
+
+                    if (o["result"] == "hello")
+                    {
+                        {
+                            json msg
+                            {
+                                {"jsonrpc", "2.0"},
+                                {"method", "poll"}
+                            };
+
+                            serialize_json_msg(_lineProtocol, msg);
+                        }
+
+                        _lineProtocol.finalize();
+
+                        LOG_INFO() << "call POLL method";
+                    }
+                    else if (o["result"] == "bye")
+                    {
+                        LOG_INFO() << "closing connection and exit";
+                        _reactor.stop();
+                    }
+                    else
+                    {
+                        LOG_ERROR() << "Unknown result, closing connection...";
+                        // close connection here
+                        return false;
+                    }
                 }
             }
             else

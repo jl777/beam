@@ -152,30 +152,40 @@ namespace beam
                         json msg
                         { 
                             {"jsonrpc", "2.0"}, 
-                            {"method" , "hello"} 
+                            {"result" , "hello"} 
                         };
 
                         serialize_json_msg(_lineProtocol, msg);
-                        _lineProtocol.finalize();
                     }
                     else if (o["method"] == "poll")
                     {
                         json msg
                         {
                             {"jsonrpc", "2.0"},
-                            {"method" , "bye"}
+                            {"result" , "bye"}
                         };
 
                         serialize_json_msg(_lineProtocol, msg);
-                        _lineProtocol.finalize();
                     }
                     else
                     {
-                        LOG_ERROR() << "Unknown method, closing connection...";
-                        // close connection here
-                        // {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Procedure not found."}, "id": 10}
-                        return false;
+                        LOG_ERROR() << "Unknown method, " << o["method"];
+
+                        json msg
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"error" , 
+                                {
+                                    {"code" , -32601},
+                                    {"message", "Procedure not found."}
+                                } 
+                            }
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
                     }
+
+                    _lineProtocol.finalize();
                 }
 
                 return true;
