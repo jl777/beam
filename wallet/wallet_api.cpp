@@ -21,16 +21,22 @@
 #include "utility/logger.h"
 
 #include "utility/helpers.h"
+#include "utility/io/timer.h"
 #include "utility/io/tcpserver.h"
+#include "utility/options.h"
 
 #include "nlohmann/json.hpp"
 #include "p2p/json_serializer.h"
 #include "p2p/line_protocol.h"
 
+#include "wallet/wallet_db.h"
+
 using json = nlohmann::json;
 
 namespace
 {
+    static const unsigned LOG_ROTATION_PERIOD = 3 * 60 * 60 * 1000; // 3 hours
+
     int parse_json(const void* buf, size_t bufSize, json& o) 
     {
         if (bufSize == 0) return -30000;
@@ -62,12 +68,20 @@ namespace beam
     class WalletServer : public ConnectionToServer
     {
     public:
-        WalletServer(io::Reactor& reactor, io::Address listenTo)
+        WalletServer(IWalletDB::Ptr walletDB, io::Reactor& reactor, io::Address listenTo)
             : _reactor(reactor)
             , _bindAddress(listenTo)
+            , _walletDB(walletDB)
         {
-
+            start();
         }
+
+        ~WalletServer()
+        {
+            stop();
+        }
+
+    protected:
 
         void start()
         {
@@ -108,7 +122,7 @@ namespace beam
                 auto peer = newStream->peer_address();
                 LOG_DEBUG() << "+peer " << peer;
 
-                _connections[peer.u64()] = std::make_unique<Connection>(*this, peer.u64(), std::move(newStream));
+                _connections[peer.u64()] = std::make_unique<Connection>(*this, _walletDB, peer.u64(), std::move(newStream));
             }
 
             LOG_DEBUG() << "on_stream_accepted";
@@ -118,11 +132,12 @@ namespace beam
         class Connection
         {
         public:
-            Connection(ConnectionToServer& owner, uint64_t id, io::TcpStream::Ptr&& newStream)
+            Connection(ConnectionToServer& owner, IWalletDB::Ptr walletDB, uint64_t id, io::TcpStream::Ptr&& newStream)
                 : _owner(owner)
                 , _id(id)
                 , _stream(std::move(newStream))
                 , _lineProtocol(BIND_THIS_MEMFN(on_raw_message), BIND_THIS_MEMFN(on_write))
+                , _walletDB(walletDB)
             {
                 _stream->enable_keepalive(2);
                 _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
@@ -215,12 +230,14 @@ namespace beam
             uint64_t _id;
             io::TcpStream::Ptr _stream;
             LineProtocol _lineProtocol;
+            IWalletDB::Ptr _walletDB;
         };
 
         io::Reactor& _reactor;
         io::TcpServer::Ptr _server;
         io::Address _bindAddress;
         std::map<uint64_t, std::unique_ptr<Connection>> _connections;
+        IWalletDB::Ptr _walletDB;
     };
 }
 
@@ -233,40 +250,73 @@ int main(int argc, char* argv[])
 
     try
     {
-        uint16_t port = 0;
+        struct
+        {
+            uint16_t port;
+            std::string walletPath;
+        } options;
+
+        IWalletDB::Ptr walletDB;
 
         {
-            po::options_description options("Wallet API options");
-            options.add_options()
-                ("help,h", "list of all options")
-                ("port,p", po::value(&port)->default_value(10000), "server port");
+            po::options_description desc("Wallet API options");
+            desc.add_options()
+                (cli::HELP_FULL, "list of all options")
+                (cli::PORT_FULL, po::value(&options.port)->default_value(10000), "server port")
+                (cli::WALLET_STORAGE, po::value<std::string>(&options.walletPath)->default_value("wallet.db"), "path to wallet file")
+                (cli::PASS, po::value<std::string>(), "password for the wallet")
+            ;
 
             po::variables_map vm;
 
             po::store(po::command_line_parser(argc, argv)
-                .options(options)
+                .options(desc)
                 .run(), vm);
 
-            if (vm.count("help")) 
+            if (vm.count(cli::HELP))
             {
-                std::cout << options << std::endl;
+                std::cout << desc << std::endl;
                 return 0;
             }
 
             vm.notify();
+
+            if (!WalletDB::isInitialized(options.walletPath))
+            {
+                LOG_ERROR() << "Wallet not found, path is: " << options.walletPath;
+                return -1;
+            }
+
+            SecString pass;
+            if (!beam::read_wallet_pass(pass, vm))
+            {
+                LOG_ERROR() << "Please, provide password for the wallet.";
+                return -1;
+            }
+
+            walletDB = WalletDB::open(options.walletPath, pass);
+            if (!walletDB)
+            {
+                LOG_ERROR() << "Wallet not opened.";
+                return -1;
+            }
+
+            LOG_INFO() << "wallet sucessfully opened...";
         }
 
-        io::Address listenTo = io::Address::localhost().port(port);
+        io::Address listenTo = io::Address::localhost().port(options.port);
         io::Reactor::Ptr reactor = io::Reactor::create();
         io::Reactor::Scope scope(*reactor);
         io::Reactor::GracefulIntHandler gih(*reactor);
 
-        WalletServer server(*reactor, listenTo);
-        server.start();
+        io::Timer::Ptr logRotateTimer = io::Timer::create(*reactor);
+        logRotateTimer->start(LOG_ROTATION_PERIOD, true, []() 
+            {
+                Logger::get()->rotate();
+            });
 
-        reactor->run();
-
-        server.stop();
+        WalletServer server(walletDB, *reactor, listenTo);
+        io::Reactor::get_Current().run();
 
         LOG_INFO() << "Done";
     }
@@ -278,7 +328,6 @@ int main(int argc, char* argv[])
     {
         LOG_ERROR() << "NON_STD EXCEPTION";
     }
-
 
     return 0;
 }
