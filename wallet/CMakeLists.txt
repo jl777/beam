@@ -31,7 +31,7 @@ target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(${TARGET_NAME} wallet utility)
 target_link_libraries(${TARGET_NAME} wallet utility)
 
-add_executable(wallet_api wallet_api.cpp)
+add_executable(wallet_api api.cpp)
 add_dependencies(wallet_api wallet utility)
 target_link_libraries(wallet_api wallet utility)
 
