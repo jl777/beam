@@ -161,7 +161,36 @@ namespace beam
                         return false;
                     }
 
-                    LOG_INFO() << "new data from client: " << "method = " << o["method"];
+                    if (o["method"] == "balance")
+                    {
+                        json msg
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"id", 6},
+                            {"result", wallet::getAvailable(_walletDB)}
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
+                    }
+                    else
+                    {
+                        LOG_ERROR() << "Unknown method, " << o["method"];
+
+                        json msg
+                        {
+                            {"jsonrpc", "2.0"},
+                            {"error" ,
+                                {
+                                    {"code" , -32601},
+                                    {"message", "Procedure not found."}
+                                }
+                            }
+                        };
+
+                        serialize_json_msg(_lineProtocol, msg);
+                    }
+
+ /*                   LOG_INFO() << "new data from client: " << "method = " << o["method"];
 
                     if (o["method"] == "hello")
                     {
@@ -183,25 +212,9 @@ namespace beam
 
                         serialize_json_msg(_lineProtocol, msg);
                     }
-                    else
-                    {
-                        LOG_ERROR() << "Unknown method, " << o["method"];
 
-                        json msg
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"error" , 
-                                {
-                                    {"code" , -32601},
-                                    {"message", "Procedure not found."}
-                                } 
-                            }
-                        };
 
-                        serialize_json_msg(_lineProtocol, msg);
-                    }
-
-                    _lineProtocol.finalize();
+                    _lineProtocol.finalize();*/
                 }
 
                 return true;

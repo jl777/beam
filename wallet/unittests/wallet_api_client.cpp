@@ -67,55 +67,28 @@ namespace beam
 
         bool on_raw_message(void* data, size_t size)
         {
+            LOG_DEBUG() << "got " << std::string((char*)data, size);
+
             json o;
             auto result = parse_json(data, size, o);
 
             if (result == 0)
             {
-                if (o["error"] != nullptr)
+                if (o["id"] == 6)
                 {
-                    LOG_ERROR() << "error data from server: " << "error.code = " << o["error"]["code"] << " erroer.message = " << o["error"]["message"];
-                    _reactor.stop();
-                    return false;
+                    LOG_INFO() << "balance is " << o["result"];
                 }
-                else if(o["result"] != nullptr)
+                else
                 {
-                    LOG_INFO() << "new data from server: " << "result = " << o["result"];
-
-                    if (o["result"] == "hello")
-                    {
-                        {
-                            json msg
-                            {
-                                {"jsonrpc", "2.0"},
-                                {"method", "poll"}
-                            };
-
-                            serialize_json_msg(_lineProtocol, msg);
-                        }
-
-                        _lineProtocol.finalize();
-
-                        LOG_INFO() << "call POLL method";
-                    }
-                    else if (o["result"] == "bye")
-                    {
-                        LOG_INFO() << "closing connection and exit";
-                        _reactor.stop();
-                    }
-                    else
-                    {
-                        LOG_ERROR() << "Unknown result, closing connection...";
-                        // close connection here
-                        return false;
-                    }
+                    LOG_ERROR() << o["error"]["code"] << ":" << o["error"]["message"];
                 }
             }
             else
             {
                 LOG_ERROR() << "stream corrupted.";
-                return false;
             }
+
+            _reactor.stop();
 
             return true;
         }
@@ -160,17 +133,7 @@ namespace beam
             _stream->enable_keepalive(2);
             _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
 
-            {
-                json msg
-                { 
-                    {"jsonrpc", "2.0"}, 
-                    {"method", "hello"}
-                };
-
-                serialize_json_msg(_lineProtocol, msg);
-            }
-
-            _lineProtocol.finalize();
+            test_balance_api();
         }
 
         bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size) 
@@ -184,6 +147,30 @@ namespace beam
             _lineProtocol.new_data_from_stream(data, size);
 
             return true;
+        }
+
+    private:
+
+        void test_balance_api()
+        {
+            LOG_INFO() << "testing BALANCE api";
+
+            json msg
+            {
+                {"jsonrpc", "2.0"},
+                {"id", 6},
+                {"method", "balance"},
+                {"params",
+                    {
+                        {"type", 0},
+                        {"addr", "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"}
+                    }
+                }
+            };
+
+            serialize_json_msg(_lineProtocol, msg);
+
+            _lineProtocol.finalize();
         }
 
     private:
