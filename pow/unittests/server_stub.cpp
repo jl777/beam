@@ -23,7 +23,7 @@
 using namespace beam;
 
 std::unique_ptr<IExternalPOW> server;
-int id = 0;
+int idInt = 0;
 Merkle::Hash hash;
 Block::PoW POW;
 static const unsigned TIMER_MSEC = 280000;
@@ -39,7 +39,7 @@ void gen_new_job() {
     ECC::GenRandom(&hash.m_pData, 32);
 
     if (server) server->new_job(
-        std::to_string(++id),
+        std::to_string(++idInt),
         hash, POW,
         &got_new_block,
         []() { return false; }
@@ -61,20 +61,18 @@ void got_new_block() {
 }
 
 void find_certificates(IExternalPOW::Options& o) {
-#define CERT_FILE_NAME "test.crt"
-#define KEY_FILE_NAME "test.key"
-#define UNITTEST_PATH PROJECT_SOURCE_DIR "/utility/unittest/"
+    static const std::string certFileName("test.crt");
+    static const std::string keyFileName("test.key");
+    static const std::string unittestPath(PROJECT_SOURCE_DIR "/utility/unittest/");
+
     using namespace boost::filesystem;
-    if (exists("./" CERT_FILE_NAME) && exists("./" KEY_FILE_NAME)) {
-        o.certFile = CERT_FILE_NAME;
-        o.privKeyFile = KEY_FILE_NAME;
-    } else if (exists(UNITTEST_PATH CERT_FILE_NAME) && exists(UNITTEST_PATH KEY_FILE_NAME)) {
-        o.certFile = UNITTEST_PATH CERT_FILE_NAME;
-        o.privKeyFile = UNITTEST_PATH KEY_FILE_NAME;
+    if (exists(certFileName) && exists(keyFileName)) {
+        o.certFile = certFileName;
+        o.privKeyFile = keyFileName;
+    } else if (exists(path(unittestPath + certFileName)) && exists(path(unittestPath + keyFileName))) {
+        o.certFile = unittestPath + certFileName;
+        o.privKeyFile = unittestPath + keyFileName;
     }
-#undef UNITTEST_PATH
-#undef CERT_FILE_NAME
-#undef KEY_FILE_NAME
 }
 
 void run_without_node() {

@@ -57,6 +57,21 @@ namespace
 
 		return true;
     }
+
+	void find_certificates(IExternalPOW::Options& o) {
+		static const std::string certFileName("test.crt");
+		static const std::string keyFileName("test.key");
+		static const std::string unittestPath(PROJECT_SOURCE_DIR "/utility/unittest/");
+
+		using namespace boost::filesystem;
+		if (exists(certFileName) && exists(keyFileName)) {
+			o.certFile = certFileName;
+			o.privKeyFile = keyFileName;
+		} else if (exists(path(unittestPath + certFileName)) && exists(path(unittestPath + keyFileName))) {
+			o.certFile = unittestPath + certFileName;
+			o.privKeyFile = unittestPath + keyFileName;
+		}
+	}
 }
 
 #ifndef LOG_VERBOSE_ENABLED
@@ -141,8 +156,7 @@ int main_impl(int argc, char* argv[])
 
 				if (stratumPort > 0) {
 					IExternalPOW::Options powOptions;
-                    powOptions.certFile = PROJECT_SOURCE_DIR "/utility/unittest/test.crt";
-                    powOptions.privKeyFile = PROJECT_SOURCE_DIR "/utility/unittest/test.key";
+                    find_certificates(powOptions);
 					stratumServer = IExternalPOW::create(powOptions, *reactor, io::Address().port(stratumPort));
 				}
 
@@ -168,7 +182,7 @@ int main_impl(int argc, char* argv[])
 					node.m_Cfg.m_MiningThreads = vm[cli::MINING_THREADS].as<uint32_t>();
 #endif
 					node.m_Cfg.m_VerificationThreads = vm[cli::VERIFICATION_THREADS].as<int>();
-					if (node.m_Cfg.m_MiningThreads > 0)
+					if (node.m_Cfg.m_MiningThreads > 0 || stratumServer)
 					{
 						ECC::NoLeak<ECC::uintBig> seed;
 						if (!beam::read_wallet_seed(seed, vm)) {

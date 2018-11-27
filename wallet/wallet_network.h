@@ -27,7 +27,7 @@
 namespace beam
 {
 	class WalletNetworkViaBbs
-		:public IWallet::INetwork
+		: public IWalletNetwork
 	{
 		IWallet& m_Wallet;
 		proto::FlyClient::INetwork& m_NodeNetwork;
@@ -96,10 +96,11 @@ namespace beam
 		WalletNetworkViaBbs(IWallet&, proto::FlyClient::INetwork&, const IWalletDB::Ptr&);
 		virtual ~WalletNetworkViaBbs();
 
-		void new_own_address(uint64_t ownID);
+		void new_own_address(uint64_t ownID, BbsChannel);
+		void new_own_address(uint64_t ownID, const WalletID&);
 		void address_deleted(uint64_t ownID);
 
-		// IWallet::INetwork
+		// IWalletNetwork
 		virtual void Send(const WalletID& peerID, wallet::SetTxParameter&& msg) override;
 
 	};

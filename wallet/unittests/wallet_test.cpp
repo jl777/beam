@@ -310,7 +310,7 @@ struct TestWalletRig
 		m_NodeNetwork.m_Cfg.m_vNodes.push_back(io::Address::localhost().port(32125));
 		m_NodeNetwork.Connect();
 
-		m_WalletNetworkViaBbs.new_own_address(wa.m_OwnID);
+		m_WalletNetworkViaBbs.new_own_address(wa.m_OwnID, m_WalletID);
     }
 
     vector<Coin> GetCoins()
@@ -333,7 +333,7 @@ struct TestWalletRig
 };
 
 struct TestWalletNetwork
-	:public IWallet::INetwork
+	: public IWalletNetwork
 	, public AsyncProcessor
 {
 	struct Entry
@@ -359,7 +359,7 @@ struct TestWalletNetwork
 	{
 		for (WalletMap::iterator it = m_Map.begin(); m_Map.end() != it; it++)
 			for (Entry& v = it->second; !v.m_Msgs.empty(); v.m_Msgs.pop_front())
-				v.m_pSink->OnWalletMsg(v.m_Msgs.front().first, std::move(v.m_Msgs.front().second));
+				v.m_pSink->OnWalletMessage(v.m_Msgs.front().first, std::move(v.m_Msgs.front().second));
 	}
 };
 
@@ -417,7 +417,7 @@ struct TestBlockchain
 		bool bCreate = true;
 		UtxoTree::MyLeaf* p = m_Utxos.Find(cu, key, bCreate);
 
-		cu.Invalidate();
+		cu.InvalidateElement();
 
 		if (bCreate)
 			p->m_Value.m_Count = 1;
@@ -471,7 +471,7 @@ struct TestBlockchain
 		if (!--p->m_Value.m_Count)
 			m_Utxos.Delete(cu);
 		else
-			cu.Invalidate();
+			cu.InvalidateElement();
 
 		return true;
 	}
@@ -698,8 +698,10 @@ void TestWalletNegotiation(IWalletDB::Ptr senderWalletDB, IWalletDB::Ptr receive
 	io::Reactor::Scope scope(*mainReactor);
 
     WalletID receiver_id, sender_id;
-	receiver_id = 4U;
-	sender_id = 5U;
+	receiver_id.m_Pk = 4U;
+	receiver_id.m_Channel = 12U;
+	sender_id.m_Pk = 5U;
+	sender_id.m_Channel = 102U;
 
     int count = 0;
     auto f = [&count](const auto& /*id*/)
@@ -875,6 +877,13 @@ private:
 		void OnMsg(proto::Ping&& msg) override
 		{
 			proto::Pong msgOut(Zero);
+			Send(msgOut);
+		}
+
+		void OnMsg(proto::BbsPickChannel&&) override
+		{
+			proto::BbsPickChannelRes msgOut;
+			msgOut.m_Channel = 77;
 			Send(msgOut);
 		}
 
