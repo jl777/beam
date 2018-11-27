@@ -272,6 +272,9 @@ int main(int argc, char* argv[])
 
             vm.notify();
 
+            Rules::get().UpdateChecksum();
+            LOG_INFO() << "Rules signature: " << Rules::get().Checksum;
+
             if (vm.count(cli::NODE_ADDR) == 0)
             {
                 LOG_ERROR() << "node address should be specified";
