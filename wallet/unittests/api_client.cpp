@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "wallet_client.h"
+#include "api_client.h"
 
 #include "utility/helpers.h"
 

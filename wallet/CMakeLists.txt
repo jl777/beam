@@ -31,12 +31,8 @@ target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(${TARGET_NAME} wallet utility)
 target_link_libraries(${TARGET_NAME} wallet utility)
 
-add_executable(wallet_server wallet_server.cpp)
-add_dependencies(wallet_server wallet utility)
-target_link_libraries(wallet_server wallet utility)
-
-add_executable(wallet_client wallet_client.cpp)
-add_dependencies(wallet_client wallet utility)
-target_link_libraries(wallet_client wallet utility)
+add_executable(wallet_api wallet_api.cpp)
+add_dependencies(wallet_api wallet utility)
+target_link_libraries(wallet_api wallet utility)
 
 add_subdirectory(unittests)
