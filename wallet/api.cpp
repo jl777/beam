@@ -27,7 +27,9 @@
 #include "p2p/json_serializer.h"
 #include "p2p/line_protocol.h"
 
+#include "wallet/wallet.h"
 #include "wallet/wallet_db.h"
+#include "wallet/wallet_network.h"
 
 using json = nlohmann::json;
 
@@ -187,32 +189,6 @@ namespace beam
 
                         serialize_json_msg(_lineProtocol, msg);
                     }
-
- /*                   LOG_INFO() << "new data from client: " << "method = " << o["method"];
-
-                    if (o["method"] == "hello")
-                    {
-                        json msg
-                        { 
-                            {"jsonrpc", "2.0"}, 
-                            {"result" , "hello"} 
-                        };
-
-                        serialize_json_msg(_lineProtocol, msg);
-                    }
-                    else if (o["method"] == "poll")
-                    {
-                        json msg
-                        {
-                            {"jsonrpc", "2.0"},
-                            {"result" , "bye"}
-                        };
-
-                        serialize_json_msg(_lineProtocol, msg);
-                    }
-
-
-                    _lineProtocol.finalize();*/
                 }
 
                 return true;
@@ -265,15 +241,19 @@ int main(int argc, char* argv[])
         {
             uint16_t port;
             std::string walletPath;
+            std::string nodeURI;
         } options;
 
+        io::Address node_addr;
         IWalletDB::Ptr walletDB;
+        io::Reactor::Ptr reactor = io::Reactor::create();
 
         {
             po::options_description desc("Wallet API options");
             desc.add_options()
                 (cli::HELP_FULL, "list of all options")
-                (cli::PORT_FULL, po::value(&options.port)->default_value(10000), "server port")
+                (cli::PORT_FULL, po::value(&options.port)->default_value(10000), "port to start server on")
+                (cli::NODE_ADDR_FULL, po::value<std::string>(&options.nodeURI), "address of node")
                 (cli::WALLET_STORAGE, po::value<std::string>(&options.walletPath)->default_value("wallet.db"), "path to wallet file")
                 (cli::PASS, po::value<std::string>(), "password for the wallet")
             ;
@@ -291,6 +271,18 @@ int main(int argc, char* argv[])
             }
 
             vm.notify();
+
+            if (vm.count(cli::NODE_ADDR) == 0)
+            {
+                LOG_ERROR() << "node address should be specified";
+                return -1;
+            }
+
+            if (!node_addr.resolve(options.nodeURI.c_str()))
+            {
+                LOG_ERROR() << "unable to resolve node address: " << options.nodeURI;
+                return -1;
+            }
 
             if (!WalletDB::isInitialized(options.walletPath))
             {
@@ -316,7 +308,6 @@ int main(int argc, char* argv[])
         }
 
         io::Address listenTo = io::Address::localhost().port(options.port);
-        io::Reactor::Ptr reactor = io::Reactor::create();
         io::Reactor::Scope scope(*reactor);
         io::Reactor::GracefulIntHandler gih(*reactor);
 
@@ -326,7 +317,19 @@ int main(int argc, char* argv[])
                 Logger::get()->rotate();
             });
 
+
+        Wallet wallet{ walletDB };
+
+        proto::FlyClient::NetworkStd nnet(wallet);
+        nnet.m_Cfg.m_vNodes.push_back(node_addr);
+        nnet.Connect();
+
+        WalletNetworkViaBbs wnet(wallet, nnet, walletDB);
+
+        wallet.set_Network(nnet, wnet);
+
         WalletServer server(walletDB, *reactor, listenTo);
+
         io::Reactor::get_Current().run();
 
         LOG_INFO() << "Done";
