@@ -14,14 +14,15 @@
 
 #include "wallet_api.h"
 
-#include "utility/helpers.h"
-
-#include "utility/io/tcpserver.h"
+#include <boost/program_options.hpp>
+#include <map>
 
 #define LOG_VERBOSE_ENABLED 1
 #include "utility/logger.h"
 
-#include <map>
+#include "utility/helpers.h"
+#include "utility/io/tcpserver.h"
+
 #include "nlohmann/json.hpp"
 #include "p2p/json_serializer.h"
 #include "p2p/line_protocol.h"
@@ -224,14 +225,38 @@ namespace beam
 }
 
 using namespace beam;
+namespace po = boost::program_options;
 
-int main()
+int main(int argc, char* argv[])
 {
     auto logger = Logger::create(LOG_LEVEL_VERBOSE, LOG_LEVEL_VERBOSE);
 
     try
     {
-        io::Address listenTo = io::Address::localhost().port(10000);
+        uint16_t port = 0;
+
+        {
+            po::options_description options("Wallet API options");
+            options.add_options()
+                ("help,h", "list of all options")
+                ("port,p", po::value(&port)->default_value(10000), "server port");
+
+            po::variables_map vm;
+
+            po::store(po::command_line_parser(argc, argv)
+                .options(options)
+                .run(), vm);
+
+            if (vm.count("help")) 
+            {
+                std::cout << options << std::endl;
+                return 0;
+            }
+
+            vm.notify();
+        }
+
+        io::Address listenTo = io::Address::localhost().port(port);
         io::Reactor::Ptr reactor = io::Reactor::create();
         io::Reactor::Scope scope(*reactor);
         io::Reactor::GracefulIntHandler gih(*reactor);
