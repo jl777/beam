@@ -28,32 +28,11 @@
 
 using json = nlohmann::json;
 
-namespace
-{
-    int parse_json(const void* buf, size_t bufSize, json& o)
-    {
-        if (bufSize == 0) return -30000;
-
-        const char* bufc = (const char*)buf;
-
-        try
-        {
-            o = json::parse(bufc, bufc + bufSize);
-        }
-        catch (const std::exception& e)
-        {
-            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
-            return -30000;
-        }
-        return 0; // OK
-    }
-}
-
 namespace beam
 {
     static const unsigned RECONNECT_TIMEOUT = 1000;
 
-    class WalletClient
+    class WalletClient : wallet_api::IParserCallback
     {
     public:
         WalletClient(io::Reactor& reactor, io::Address serverAddress)
@@ -65,25 +44,23 @@ namespace beam
             _timer->start(0, false, BIND_THIS_MEMFN(on_reconnect));
         }
 
+        void parse(const wallet_api::Balance&) override {}
+
+        void parse(const wallet_api::BalanceRes& balance) override
+        {
+            LOG_INFO() << "balance is " << balance.amount;
+        }
+
+        void parse(const wallet_api::UnknownMethodError& error) override
+        {
+            LOG_ERROR() << error.code << " - " << error.message;
+        }
+
         bool on_raw_message(void* data, size_t size)
         {
             LOG_DEBUG() << "got " << std::string((char*)data, size);
 
-            json o;
-            auto result = parse_json(data, size, o);
-
-            if (result == 0)
-            {
-                if (o["id"] == 6)
-                {
-                    LOG_INFO() << "balance is " << o["result"];
-                }
-                else
-                {
-                    LOG_ERROR() << o["error"]["code"] << ":" << o["error"]["message"];
-                }
-            }
-            else
+            if (!wallet_api::parse_json_msg(data, size, *this))
             {
                 LOG_ERROR() << "stream corrupted.";
             }

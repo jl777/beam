@@ -19,6 +19,27 @@
 
 using json = nlohmann::json;
 
+namespace
+{
+    int parse_json(const void* buf, size_t bufSize, json& o)
+    {
+        if (bufSize == 0) return -30000;
+
+        const char* bufc = (const char*)buf;
+
+        try
+        {
+            o = json::parse(bufc, bufc + bufSize);
+        }
+        catch (const std::exception& e)
+        {
+            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
+            return -30000;
+        }
+        return 0; // OK
+    }
+}
+
 namespace beam
 {
     namespace wallet_api
@@ -66,6 +87,45 @@ namespace beam
             };
 
             serialize_json_msg(packer, msg);
+        }
+
+        bool parse_json_msg(void* data, size_t size, IParserCallback& callback)
+        {
+            json msg;
+
+            if(parse_json(data, size, msg) == 0)
+            {
+                if (msg["id"] == 6)
+                {
+                    if (msg["method"] == "balance")
+                    {
+                        Balance balance;
+                        balance.method = "balance";
+                        balance.type = msg["params"]["type"];
+                        //balance.addr = msg["params"]["addr"];
+
+                        callback.parse(balance);
+                    }
+                    else
+                    {
+                        BalanceRes balance;
+                        balance.amount = msg["result"];
+
+                        callback.parse(balance);
+                    }
+                }
+                else if (msg["id"] == 0)
+                {
+                    UnknownMethodError error;
+                    error.code = msg["error"]["code"];
+                    error.message = msg["error"]["message"];
+
+                    callback.parse(error);
+                }
+            }
+            else return false;
+
+            return true;
         }
     }
 }

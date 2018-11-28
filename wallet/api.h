@@ -50,11 +50,23 @@ namespace beam
 
         struct UnknownMethodError : Message
         {
+            int code;
+            std::string message;
+
             UnknownMethodError() : Message(0, "error") {}
         };
 
         void append_json_msg(io::FragmentWriter&, const Balance&);
         void append_json_msg(io::FragmentWriter&, const BalanceRes&);
         void append_json_msg(io::FragmentWriter&, const UnknownMethodError&);
+
+        struct IParserCallback
+        {
+            virtual void parse(const Balance&) = 0;
+            virtual void parse(const BalanceRes&) = 0;
+            virtual void parse(const UnknownMethodError&) = 0;
+        };
+
+        bool parse_json_msg(void* data, size_t size, IParserCallback& callback);
     };
 }

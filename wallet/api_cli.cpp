@@ -35,28 +35,7 @@
 
 using json = nlohmann::json;
 
-namespace
-{
-    static const unsigned LOG_ROTATION_PERIOD = 3 * 60 * 60 * 1000; // 3 hours
-
-    int parse_json(const void* buf, size_t bufSize, json& o) 
-    {
-        if (bufSize == 0) return -30000;
-
-        const char* bufc = (const char*)buf;
-
-        try 
-        {
-            o = json::parse(bufc, bufc + bufSize);
-        }
-        catch (const std::exception& e) 
-        {
-            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
-            return -30000;
-        }
-        return 0; // OK
-    }
-}
+static const unsigned LOG_ROTATION_PERIOD = 3 * 60 * 60 * 1000; // 3 hours
 
 namespace beam
 {
@@ -131,7 +110,7 @@ namespace beam
         }
 
     private:
-        class Connection
+        class Connection : wallet_api::IParserCallback
         {
         public:
             Connection(ConnectionToServer& owner, IWalletDB::Ptr walletDB, uint64_t id, io::TcpStream::Ptr&& newStream)
@@ -150,33 +129,25 @@ namespace beam
                 _stream->write(msg);
             }
 
+            void parse(const wallet_api::Balance& balance) override 
+            {
+                wallet_api::BalanceRes res;
+                res.amount = wallet::getAvailable(_walletDB);
+
+                append_json_msg(_lineProtocol, res);
+            }
+
+            void parse(const wallet_api::BalanceRes&) override {}
+            void parse(const wallet_api::UnknownMethodError&) override {}
+
             bool on_raw_message(void* data, size_t size) 
             {
                 LOG_INFO() << "got " << std::string((char*)data, size);
 
+                if (!wallet_api::parse_json_msg(data, size, *this))
                 {
-                    json o;
-                    auto result = parse_json(data, size, o);
-
-                    if (result != 0)
-                    {
-                        return false;
-                    }
-
-                    if (o["method"] == "balance")
-                    {
-                        wallet_api::BalanceRes balance;
-                        balance.amount = wallet::getAvailable(_walletDB);
-
-                        append_json_msg(_lineProtocol, balance);
-                    }
-                    else
-                    {
-                        LOG_ERROR() << "Unknown method, " << o["method"];
-
-                        wallet_api::UnknownMethodError error;
-                        append_json_msg(_lineProtocol, error);
-                    }
+                    LOG_ERROR() << "Stream currupted";
+                    return false;
                 }
 
                 return true;
