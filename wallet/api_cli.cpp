@@ -110,9 +110,7 @@ namespace beam
         }
 
     private:
-        class Connection 
-            : wallet_api::IParserCallback
-            , IWalletApiHandler
+        class Connection : IWalletApiHandler
         {
         public:
             Connection(ConnectionToServer& owner, IWalletDB::Ptr walletDB, uint64_t id, io::TcpStream::Ptr&& newStream)
@@ -147,17 +145,6 @@ namespace beam
                 _api.getBalanceResponse(id, wallet::getAvailable(_walletDB), msg);
                 serialize_json_msg(_lineProtocol, msg);
             }
-
-            void parse(const wallet_api::Balance& balance) override 
-            {
-                wallet_api::BalanceRes res;
-                res.amount = wallet::getAvailable(_walletDB);
-
-                append_json_msg(_lineProtocol, res);
-            }
-
-            void parse(const wallet_api::BalanceRes&) override {}
-            void parse(const wallet_api::UnknownMethodError&) override {}
 
             bool on_raw_message(void* data, size_t size) 
             {

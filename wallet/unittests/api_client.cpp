@@ -24,15 +24,13 @@
 #include "p2p/json_serializer.h"
 #include "p2p/line_protocol.h"
 
-#include "wallet/api.h"
-
 using json = nlohmann::json;
 
 namespace beam
 {
     static const unsigned RECONNECT_TIMEOUT = 1000;
 
-    class WalletClient : wallet_api::IParserCallback
+    class WalletClient
     {
     public:
         WalletClient(io::Reactor& reactor, io::Address serverAddress)
@@ -44,26 +42,14 @@ namespace beam
             _timer->start(0, false, BIND_THIS_MEMFN(on_reconnect));
         }
 
-        void parse(const wallet_api::Balance&) override {}
-
-        void parse(const wallet_api::BalanceRes& balance) override
-        {
-            LOG_INFO() << "balance is " << balance.amount;
-        }
-
-        void parse(const wallet_api::UnknownMethodError& error) override
-        {
-            LOG_ERROR() << error.code << " - " << error.message;
-        }
-
-        bool on_raw_message(void* data, size_t size)
+         bool on_raw_message(void* data, size_t size)
         {
             LOG_DEBUG() << "got " << std::string((char*)data, size);
 
-            if (!wallet_api::parse_json_msg(data, size, *this))
-            {
-                LOG_ERROR() << "stream corrupted.";
-            }
+            //if (!wallet_api::parse_json_msg(data, size, *this))
+            //{
+            //    LOG_ERROR() << "stream corrupted.";
+            //}
 
             _reactor.stop();
 

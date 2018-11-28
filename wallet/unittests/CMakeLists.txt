@@ -8,6 +8,5 @@ add_dependencies(offline node wallet)
 target_link_libraries(offline node wallet)
 
 add_executable(wallet_api_client api_client.cpp)
-# TODO: remove wallet lib dependency
-add_dependencies(wallet_api_client wallet utility wallet_api_proto)
-target_link_libraries(wallet_api_client wallet utility wallet_api_proto)
+add_dependencies(wallet_api_client utility)
+target_link_libraries(wallet_api_client utility)
