@@ -24,6 +24,8 @@
 #include "p2p/json_serializer.h"
 #include "p2p/line_protocol.h"
 
+#include "wallet/api.h"
+
 using json = nlohmann::json;
 
 namespace
@@ -153,20 +155,11 @@ namespace beam
         {
             LOG_INFO() << "testing BALANCE api";
 
-            json msg
-            {
-                {"jsonrpc", "2.0"},
-                {"id", 6},
-                {"method", "balance"},
-                {"params",
-                    {
-                        {"type", 0},
-                        {"addr", "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"}
-                    }
-                }
-            };
+            wallet_api::Balance balance;
+            balance.type = 0;
+            //balance.addr = ; // here should be generated address
 
-            serialize_json_msg(_lineProtocol, msg);
+            append_json_msg(_lineProtocol, balance);
 
             _lineProtocol.finalize();
         }
