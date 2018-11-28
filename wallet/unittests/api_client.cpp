@@ -132,11 +132,19 @@ namespace beam
         {
             LOG_INFO() << "testing BALANCE api";
 
-            wallet_api::Balance balance;
-            balance.type = 0;
-            //balance.addr = ; // here should be generated address
+            json msg
+            {
+                {"jsonrpc", "2.0"},
+                {"id", 123},
+                {"method", "balance"},
+                {"params", 
+                {
+                    {"type", 0},
+                    {"addr", "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"},
+                }}
+            };
 
-            append_json_msg(_lineProtocol, balance);
+            serialize_json_msg(_lineProtocol, msg);
 
             _lineProtocol.finalize();
         }

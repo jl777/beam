@@ -15,11 +15,39 @@
 #pragma once
 
 #include "wallet/wallet.h"
+#include "nlohmann/json.hpp"
 
 namespace beam
 {
+    using json = nlohmann::json;
+
+    class IWalletApiHandler
+    {
+    public:
+        virtual void onInvalidJsonRpc(const json& msg) = 0;
+        virtual void onBalanceMessage(int id, int type, const WalletID& address) = 0;
+    };
+
+    class WalletApi
+    {
+    public:
+        WalletApi(IWalletApiHandler& handler);
+
+        void getBalanceResponse(int id, const Amount& amount, json& msg);
+
+        bool parse(const char* data, size_t size);
+
+    private:
+        void balanceMethod(const json& msg);
+
+    private:
+        IWalletApiHandler& _handler;
+        std::map<std::string, std::function<void(const json& msg)>> _methods;
+    };
+
     namespace wallet_api
     {
+
         struct Message
         {
             int id;

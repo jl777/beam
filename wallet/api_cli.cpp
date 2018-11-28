@@ -110,7 +110,9 @@ namespace beam
         }
 
     private:
-        class Connection : wallet_api::IParserCallback
+        class Connection 
+            : wallet_api::IParserCallback
+            , IWalletApiHandler
         {
         public:
             Connection(ConnectionToServer& owner, IWalletDB::Ptr walletDB, uint64_t id, io::TcpStream::Ptr&& newStream)
@@ -119,6 +121,7 @@ namespace beam
                 , _stream(std::move(newStream))
                 , _lineProtocol(BIND_THIS_MEMFN(on_raw_message), BIND_THIS_MEMFN(on_write))
                 , _walletDB(walletDB)
+                , _api(*this)
             {
                 _stream->enable_keepalive(2);
                 _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
@@ -127,6 +130,22 @@ namespace beam
             void on_write(io::SharedBuffer&& msg) 
             {
                 _stream->write(msg);
+            }
+
+            void onInvalidJsonRpc(const json& msg) override
+            {
+                LOG_DEBUG() << "onInvalidJsonRpc: " << msg;
+
+                serialize_json_msg(_lineProtocol, msg);
+            }
+
+            void onBalanceMessage(int id, int type, const WalletID& address) override
+            {
+                LOG_DEBUG() << "onBalanceMessage()";
+
+                json msg;
+                _api.getBalanceResponse(id, wallet::getAvailable(_walletDB), msg);
+                serialize_json_msg(_lineProtocol, msg);
             }
 
             void parse(const wallet_api::Balance& balance) override 
@@ -144,13 +163,7 @@ namespace beam
             {
                 LOG_INFO() << "got " << std::string((char*)data, size);
 
-                if (!wallet_api::parse_json_msg(data, size, *this))
-                {
-                    LOG_ERROR() << "Stream currupted";
-                    return false;
-                }
-
-                return true;
+                return _api.parse(static_cast<const char*>(data), size);
             }
 
             bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size)
@@ -177,6 +190,7 @@ namespace beam
             io::TcpStream::Ptr _stream;
             LineProtocol _lineProtocol;
             IWalletDB::Ptr _walletDB;
+            WalletApi _api;
         };
 
         io::Reactor& _reactor;

@@ -42,6 +42,109 @@ namespace
 
 namespace beam
 {
+    struct jsonrpc_exception
+    {
+        int code;
+        std::string message;
+        int id;
+    };
+
+    void throwInvalidJsonRpc(int id = 0)
+    {
+        throw jsonrpc_exception{ -32600 , "Invalid JSON-RPC.", id };
+    }
+
+    void throwUnknownJsonRpc(int id)
+    {
+        throw jsonrpc_exception{ -32601 , "Procedure not found.", id};
+    }
+
+    std::string getJsonString(const char* data, size_t size)
+    {
+        return std::string(data, data + (size > 1024 ? 1024 : size));
+    }
+
+    WalletApi::WalletApi(IWalletApiHandler& handler)
+        : _handler(handler)
+    {
+        _methods["balance"] = BIND_THIS_MEMFN(balanceMethod);
+    };
+
+    void WalletApi::balanceMethod(const nlohmann::json& msg)
+    {
+        LOG_DEBUG() << "balanceMethod()";
+
+        auto params = msg["params"];
+
+        int type = params["type"];
+        WalletID address;
+        address.FromHex(params["addr"]);
+
+        _handler.onBalanceMessage(msg["id"], type, address);
+    }
+
+    void WalletApi::getBalanceResponse(int id, const Amount& amount, json& msg)
+    {
+        msg = json
+        {
+            {"jsonrpc", "2.0"},
+            {"id", id},
+            {"result", amount}
+        };
+    }
+
+    bool WalletApi::parse(const char* data, size_t size)
+    {
+        if (size == 0) return false;
+
+        try
+        {
+            json msg = json::parse(data, data + size);
+
+            if (msg["jsonrpc"] != "2.0") throwInvalidJsonRpc();
+            if (msg["id"] <= 0) throwInvalidJsonRpc();
+            if (msg["method"] == nullptr) throwInvalidJsonRpc();
+            if (msg["params"] == nullptr) throwInvalidJsonRpc();
+            if (_methods.find(msg["method"]) == _methods.end()) throwUnknownJsonRpc(msg["id"]);
+
+            try
+            {
+                _methods[msg["method"]](msg);
+            }
+            catch (const nlohmann::detail::exception& e)
+            {
+                LOG_ERROR() << "json parse: " << e.what() << "\n" << getJsonString(data, size);
+
+                throwInvalidJsonRpc(msg["id"]);
+            }
+        }
+        catch (const jsonrpc_exception& e)
+        {
+            _handler.onInvalidJsonRpc(json
+            {
+                {"jsonrpc", "2.0"},
+                {"id", e.id},
+                {"error",
+                    {
+                        {"code", e.code},
+                        {"message", e.message},
+                    }
+                }
+            });
+        }
+        catch (const std::exception& e)
+        {
+            LOG_ERROR() << "json parse: " << e.what() << "\n" << getJsonString(data, size);
+            return false;
+        }
+
+        return true;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
     namespace wallet_api
     {
         void append_json_msg(io::FragmentWriter& packer, const Balance& balance)
