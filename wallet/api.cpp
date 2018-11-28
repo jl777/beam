@@ -14,31 +14,9 @@
 
 #include "api.h"
 
-#include "p2p/json_serializer.h"
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
-
-namespace
-{
-    int parse_json(const void* buf, size_t bufSize, json& o)
-    {
-        if (bufSize == 0) return -30000;
-
-        const char* bufc = (const char*)buf;
-
-        try
-        {
-            o = json::parse(bufc, bufc + bufSize);
-        }
-        catch (const std::exception& e)
-        {
-            LOG_ERROR() << "json parse: " << e.what() << "\n" << std::string(bufc, bufc + (bufSize > 1024 ? 1024 : bufSize));
-            return -30000;
-        }
-        return 0; // OK
-    }
-}
 
 namespace beam
 {

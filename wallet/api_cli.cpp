@@ -24,9 +24,9 @@
 #include "utility/io/timer.h"
 #include "utility/io/tcpserver.h"
 #include "utility/options.h"
+#include "utility/io/json_serializer.h"
 
 #include "p2p/line_protocol.h"
-#include "p2p/json_serializer.h"
 
 #include "wallet/wallet_db.h"
 #include "wallet/wallet_network.h"
