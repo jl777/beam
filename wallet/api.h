@@ -17,6 +17,9 @@
 #include "wallet/wallet.h"
 #include "nlohmann/json.hpp"
 
+#define INVALID_JSON_RPC -32600
+#define NOTFOUND_JSON_RPC -32601
+
 namespace beam
 {
     using json = nlohmann::json;

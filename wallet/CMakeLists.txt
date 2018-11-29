@@ -32,6 +32,8 @@ add_dependencies(${TARGET_NAME} wallet utility)
 target_link_libraries(${TARGET_NAME} wallet utility)
 
 add_library(wallet_api_proto STATIC api.cpp)
+add_dependencies(wallet_api_proto wallet utility)
+target_link_libraries(wallet_api_proto wallet utility)
 
 add_executable(wallet_api api_cli.cpp)
 add_dependencies(wallet_api wallet utility wallet_api_proto)

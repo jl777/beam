@@ -46,10 +46,10 @@ namespace beam
         virtual void on_bad_peer(uint64_t from) = 0;
     };
 
-    class WalletServer : public ConnectionToServer
+    class WalletApiServer : public ConnectionToServer
     {
     public:
-        WalletServer(IWalletDB::Ptr walletDB, io::Reactor& reactor, io::Address listenTo)
+        WalletApiServer(IWalletDB::Ptr walletDB, io::Reactor& reactor, io::Address listenTo)
             : _reactor(reactor)
             , _bindAddress(listenTo)
             , _walletDB(walletDB)
@@ -57,7 +57,7 @@ namespace beam
             start();
         }
 
-        ~WalletServer()
+        ~WalletApiServer()
         {
             stop();
         }
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
 
         wallet.set_Network(nnet, wnet);
 
-        WalletServer server(walletDB, *reactor, listenTo);
+        WalletApiServer server(walletDB, *reactor, listenTo);
 
         io::Reactor::get_Current().run();
 

@@ -29,12 +29,12 @@ namespace beam
 
     void throwInvalidJsonRpc(int id = 0)
     {
-        throw jsonrpc_exception{ -32600 , "Invalid JSON-RPC.", id };
+        throw jsonrpc_exception{ INVALID_JSON_RPC , "Invalid JSON-RPC.", id };
     }
 
     void throwUnknownJsonRpc(int id)
     {
-        throw jsonrpc_exception{ -32601 , "Procedure not found.", id};
+        throw jsonrpc_exception{ NOTFOUND_JSON_RPC , "Procedure not found.", id};
     }
 
     std::string getJsonString(const char* data, size_t size)
@@ -98,17 +98,21 @@ namespace beam
         }
         catch (const jsonrpc_exception& e)
         {
-            _handler.onInvalidJsonRpc(json
+            json msg
             {
                 {"jsonrpc", "2.0"},
-                {"id", e.id},
                 {"error",
                     {
                         {"code", e.code},
                         {"message", e.message},
                     }
                 }
-            });
+            };
+
+            if (e.id) msg["id"] = e.id;
+            else msg["id"] = nullptr;
+
+            _handler.onInvalidJsonRpc(msg);
         }
         catch (const std::exception& e)
         {
