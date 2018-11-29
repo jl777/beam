@@ -32,6 +32,38 @@ using jsonFunc = std::function<void(const json&)>;
 
 namespace
 {
+    void testErrorHeader(const json& msg)
+    {
+        CHECK_JSON_FIELD(msg, "jsonrpc");
+        CHECK_JSON_FIELD(msg, "id");
+        CHECK_JSON_FIELD(msg, "error");
+        CHECK_JSON_FIELD(msg["error"], "code");
+        CHECK_JSON_FIELD(msg["error"], "message");
+
+        WALLET_CHECK(msg["jsonrpc"] == "2.0");
+    }
+
+    void testMethodHeader(const json& msg)
+    {
+        CHECK_JSON_FIELD(msg, "jsonrpc");
+        CHECK_JSON_FIELD(msg, "id");
+        CHECK_JSON_FIELD(msg, "method");
+
+        WALLET_CHECK(msg["jsonrpc"] == "2.0");
+        WALLET_CHECK(msg["id"] > 0);
+        WALLET_CHECK(msg["method"].is_string());
+    }
+
+    void testResultHeader(const json& msg)
+    {
+        CHECK_JSON_FIELD(msg, "jsonrpc");
+        CHECK_JSON_FIELD(msg, "id");
+        CHECK_JSON_FIELD(msg, "result");
+
+        WALLET_CHECK(msg["jsonrpc"] == "2.0");
+        WALLET_CHECK(msg["id"] > 0);
+    }
+
     class WalletApiHandlerBase : public IWalletApiHandler
     {
         void onInvalidJsonRpc(const json& msg) override {}
@@ -57,18 +89,43 @@ namespace
 
         WalletApi api(handler);
 
-        api.parse(msg.data(), msg.size());
+        WALLET_CHECK(api.parse(msg.data(), msg.size()));
     }
 
-    void testErrorHeader(const json& msg)
+    void testBalanceJsonRpc(const std::string& msg)
     {
-        CHECK_JSON_FIELD(msg, "jsonrpc");
-        CHECK_JSON_FIELD(msg, "id");
-        CHECK_JSON_FIELD(msg, "error");
-        CHECK_JSON_FIELD(msg["error"], "code");
-        CHECK_JSON_FIELD(msg["error"], "message");
+        class WalletApiHandler : public WalletApiHandlerBase
+        {
+        public:
 
-        WALLET_CHECK(msg["jsonrpc"] == "2.0");
+            void onInvalidJsonRpc(const json& msg) override
+            {
+                WALLET_CHECK(!"invalid balance api json!!!");
+
+                cout << msg["error"]["message"] << endl;
+            }
+
+            void onBalanceMessage(int id, int type, const WalletID& address) override 
+            {
+                WALLET_CHECK(id > 0);
+                WALLET_CHECK(type >= 0);
+                WALLET_CHECK(address.IsValid());
+            }
+        };
+
+        WalletApiHandler handler;
+        WalletApi api(handler);
+
+        WALLET_CHECK(api.parse(msg.data(), msg.size()));
+
+        {
+            json res;
+            api.getBalanceResponse(123, 80000000, res);
+            testResultHeader(res);
+
+            WALLET_CHECK(res["id"] == 123);
+            WALLET_CHECK(res["result"] == 80000000);
+        }
     }
 }
 
@@ -93,6 +150,32 @@ int main()
         "jsonrpc": "2.0",
         "method" : 1,
         "params" : "bar"
+    }));
+
+    testInvalidJsonRpc([](const json& msg)
+    {
+        testErrorHeader(msg);
+
+        WALLET_CHECK(msg["id"] == 123);
+        WALLET_CHECK(msg["error"]["code"] == NOTFOUND_JSON_RPC);
+    }, JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 123,
+        "method" : "balance123",
+        "params" : "bar"
+    }));
+
+    testBalanceJsonRpc(JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "balance",
+        "params" : 
+        {
+            "type" : 0,
+            "addr" : "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"
+        }
     }));
 
     return WALLET_CHECK_RESULT;
