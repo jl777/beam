@@ -43,14 +43,9 @@ namespace beam
             _timer->start(0, false, BIND_THIS_MEMFN(on_reconnect));
         }
 
-         bool on_raw_message(void* data, size_t size)
+        bool on_raw_message(void* data, size_t size)
         {
             LOG_DEBUG() << "got " << std::string((char*)data, size);
-
-            //if (!wallet_api::parse_json_msg(data, size, *this))
-            //{
-            //    LOG_ERROR() << "stream corrupted.";
-            //}
 
             _reactor.stop();
 
@@ -97,7 +92,8 @@ namespace beam
             _stream->enable_keepalive(2);
             _stream->enable_read(BIND_THIS_MEMFN(on_stream_data));
 
-            test_balance_api();
+            test_create_address_api();
+            //test_balance_api();
         }
 
         bool on_stream_data(io::ErrorCode errorCode, void* data, size_t size) 
@@ -114,6 +110,26 @@ namespace beam
         }
 
     private:
+
+        void test_create_address_api()
+        {
+            LOG_INFO() << "testing CREATE_ADDRESS api";
+
+            json msg
+            {
+                {"jsonrpc", "2.0"},
+                {"id", 124},
+                {"method", "create_address"},
+                {"params",
+                {
+                    {"metadata", "<meta></meta>"}
+                }}
+            };
+
+            serialize_json_msg(_lineProtocol, msg);
+
+            _lineProtocol.finalize();
+        }
 
         void test_balance_api()
         {

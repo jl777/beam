@@ -28,6 +28,8 @@ namespace beam
     {
     public:
         virtual void onInvalidJsonRpc(const json& msg) = 0;
+
+        virtual void onCreateAddressMessage(int id, const std::string& metadata) = 0;
         virtual void onBalanceMessage(int id, int type, const WalletID& address) = 0;
     };
 
@@ -36,11 +38,13 @@ namespace beam
     public:
         WalletApi(IWalletApiHandler& handler);
 
+        void getCreateAddressResponse(int id, const WalletID& address, json& msg);
         void getBalanceResponse(int id, const Amount& amount, json& msg);
 
         bool parse(const char* data, size_t size);
 
     private:
+        void createAddressMethod(const json& msg);
         void balanceMethod(const json& msg);
 
     private:

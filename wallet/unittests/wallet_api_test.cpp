@@ -67,6 +67,7 @@ namespace
     class WalletApiHandlerBase : public IWalletApiHandler
     {
         void onInvalidJsonRpc(const json& msg) override {}
+        void onCreateAddressMessage(int id, const std::string& metadata) override {}
         void onBalanceMessage(int id, int type, const WalletID& address) override {}
     };
 
@@ -90,6 +91,52 @@ namespace
         WalletApi api(handler);
 
         WALLET_CHECK(api.parse(msg.data(), msg.size()));
+    }
+
+    void testCreateAddressJsonRpc(const std::string& msg)
+    {
+        class WalletApiHandler : public WalletApiHandlerBase
+        {
+        public:
+
+            void onInvalidJsonRpc(const json& msg) override
+            {
+                WALLET_CHECK(!"invalid create_address api json!!!");
+
+                cout << msg["error"]["message"] << endl;
+            }
+
+            void onCreateAddressMessage(int id, const std::string& metadata) override
+            {
+                WALLET_CHECK(id > 0);
+                WALLET_CHECK(metadata == "<meta>custom user data</meta>");
+            }
+        };
+
+        WalletApiHandler handler;
+        WalletApi api(handler);
+
+        WALLET_CHECK(api.parse(msg.data(), msg.size()));
+
+        {
+            std::string addr = "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67";
+            WalletID walletID;
+            walletID.FromHex(addr);
+
+            WALLET_CHECK(walletID.IsValid());
+
+            json res;
+            api.getCreateAddressResponse(123, walletID, res);
+            testResultHeader(res);
+
+            cout << res["result"] << endl;
+
+            WALLET_CHECK(res["id"] == 123);
+
+            WalletID walletID2;
+            walletID2.FromHex(res["result"]);
+            WALLET_CHECK(walletID.cmp(walletID2) == 0);
+        }
     }
 
     void testBalanceJsonRpc(const std::string& msg)
@@ -175,6 +222,17 @@ int main()
         {
             "type" : 0,
             "addr" : "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"
+        }
+    }));
+
+    testCreateAddressJsonRpc(JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "create_address",
+        "params" :
+        {
+            "metadata" : "<meta>custom user data</meta>"
         }
     }));
 

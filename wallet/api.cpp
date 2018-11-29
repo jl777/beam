@@ -45,8 +45,21 @@ namespace beam
     WalletApi::WalletApi(IWalletApiHandler& handler)
         : _handler(handler)
     {
+        _methods["create_address"] = BIND_THIS_MEMFN(createAddressMethod);
         _methods["balance"] = BIND_THIS_MEMFN(balanceMethod);
     };
+
+
+    void WalletApi::createAddressMethod(const nlohmann::json& msg)
+    {
+        LOG_DEBUG() << "createAddressMethod()";
+
+        auto params = msg["params"];
+
+        std::string metadata = params["metadata"];
+
+        _handler.onCreateAddressMessage(msg["id"], metadata);
+    }
 
     void WalletApi::balanceMethod(const nlohmann::json& msg)
     {
@@ -68,6 +81,16 @@ namespace beam
             {"jsonrpc", "2.0"},
             {"id", id},
             {"result", amount}
+        };
+    }
+
+    void WalletApi::getCreateAddressResponse(int id, const WalletID& address, json& msg)
+    {
+        msg = json
+        {
+            {"jsonrpc", "2.0"},
+            {"id", id},
+            {"result", std::to_string(address)}
         };
     }
 

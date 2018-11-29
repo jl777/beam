@@ -137,9 +137,21 @@ namespace beam
                 serialize_json_msg(_lineProtocol, msg);
             }
 
+            void onCreateAddressMessage(int id, const std::string& metadata) override
+            {
+                LOG_DEBUG() << "onCreateAddressMessage(" << id << "," << metadata << ")";
+
+                WalletAddress address;
+                _walletDB->createAddress(address);
+
+                json msg;
+                _api.getCreateAddressResponse(id, address.m_walletID, msg);
+                serialize_json_msg(_lineProtocol, msg);
+            }
+
             void onBalanceMessage(int id, int type, const WalletID& address) override
             {
-                LOG_DEBUG() << "onBalanceMessage()";
+                LOG_DEBUG() << "onBalanceMessage(" << id << "," << type << "," << std::to_string(address) << ")";
 
                 json msg;
                 _api.getBalanceResponse(id, wallet::getAvailable(_walletDB), msg);
