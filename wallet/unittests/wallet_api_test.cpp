@@ -67,8 +67,9 @@ namespace
     class WalletApiHandlerBase : public IWalletApiHandler
     {
         void onInvalidJsonRpc(const json& msg) override {}
-        void onCreateAddressMessage(int id, const std::string& metadata) override {}
-        void onBalanceMessage(int id, int type, const WalletID& address) override {}
+        
+        void onMessage(int id, const CreateAddress& data) override {}
+        void onMessage(int id, const Balance& data) override {}
     };
 
     void testInvalidJsonRpc(jsonFunc func, const std::string& msg)
@@ -106,10 +107,10 @@ namespace
                 cout << msg["error"]["message"] << endl;
             }
 
-            void onCreateAddressMessage(int id, const std::string& metadata) override
+            void onMessage(int id, const CreateAddress& data) override 
             {
                 WALLET_CHECK(id > 0);
-                WALLET_CHECK(metadata == "<meta>custom user data</meta>");
+                WALLET_CHECK(data.metadata == "<meta>custom user data</meta>");
             }
         };
 
@@ -152,11 +153,11 @@ namespace
                 cout << msg["error"]["message"] << endl;
             }
 
-            void onBalanceMessage(int id, int type, const WalletID& address) override 
+            void onMessage(int id, const Balance& data) override
             {
                 WALLET_CHECK(id > 0);
-                WALLET_CHECK(type >= 0);
-                WALLET_CHECK(address.IsValid());
+                WALLET_CHECK(data.type >= 0);
+                WALLET_CHECK(data.address.IsValid());
             }
         };
 

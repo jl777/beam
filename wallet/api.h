@@ -24,13 +24,34 @@ namespace beam
 {
     using json = nlohmann::json;
 
+    struct CreateAddress
+    {
+        std::string metadata;
+
+        struct Response
+        {
+            WalletID address;
+        };
+    };
+
+    struct Balance
+    {
+        int type;
+        WalletID address;
+
+        struct Response
+        {
+            Amount amount;
+        };
+    };
+
     class IWalletApiHandler
     {
     public:
         virtual void onInvalidJsonRpc(const json& msg) = 0;
 
-        virtual void onCreateAddressMessage(int id, const std::string& metadata) = 0;
-        virtual void onBalanceMessage(int id, int type, const WalletID& address) = 0;
+        virtual void onMessage(int id, const CreateAddress& data) = 0;
+        virtual void onMessage(int id, const Balance& data) = 0;
     };
 
     class WalletApi
@@ -38,12 +59,16 @@ namespace beam
     public:
         WalletApi(IWalletApiHandler& handler);
 
+        void getResponse(int id, const CreateAddress::Response& data, json& msg);
+        void getResponse(int id, const Balance::Response& data, json& msg);
+
         void getCreateAddressResponse(int id, const WalletID& address, json& msg);
         void getBalanceResponse(int id, const Amount& amount, json& msg);
 
         bool parse(const char* data, size_t size);
 
     private:
+
         void createAddressMethod(const json& msg);
         void balanceMethod(const json& msg);
 

@@ -56,9 +56,11 @@ namespace beam
 
         auto params = msg["params"];
 
-        std::string metadata = params["metadata"];
+        CreateAddress createAddress;
 
-        _handler.onCreateAddressMessage(msg["id"], metadata);
+        createAddress.metadata = params["metadata"];
+
+        _handler.onMessage(msg["id"], createAddress);
     }
 
     void WalletApi::balanceMethod(const nlohmann::json& msg)
@@ -67,11 +69,31 @@ namespace beam
 
         auto params = msg["params"];
 
-        int type = params["type"];
-        WalletID address;
-        address.FromHex(params["addr"]);
+        Balance balance;
+        balance.type = params["type"];
+        balance.address.FromHex(params["addr"]);
 
-        _handler.onBalanceMessage(msg["id"], type, address);
+        _handler.onMessage(msg["id"], balance);
+    }
+
+    void getResponse(int id, const CreateAddress::Response& data, json& msg)
+    {
+        msg = json
+        {
+            {"jsonrpc", "2.0"},
+            {"id", id},
+            {"result", std::to_string(data.address)}
+        };
+    }
+
+    void getResponse(int id, const Balance::Response& data, json& msg)
+    {
+        msg = json
+        {
+            {"jsonrpc", "2.0"},
+            {"id", id},
+            {"result", data.amount}
+        };
     }
 
     void WalletApi::getBalanceResponse(int id, const Amount& amount, json& msg)
