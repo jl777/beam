@@ -34,21 +34,19 @@ namespace
     const char* LocalNodePort = "localnode/port";
     const char* LocalNodeMiningThreads = "localnode/mining_threads";
     const char* LocalNodeVerificationThreads = "localnode/verification_threads";
-    const char* LocalNodeGenerateGenesys = "localnode/generate_genesys";
     const char* LocalNodeSynchronized = "localnode/synchronized";
     const char* LocalNodePeers = "localnode/peers";
 #ifdef BEAM_USE_GPU
     const char* LocalNodeUseGpu = "localnode/use_gpu";
 #endif
-
-    const char* SettingsIni = "settings.ini";
 }
 
 const char* WalletSettings::WalletCfg = "beam-wallet.cfg";
 const char* WalletSettings::LogsFolder = "logs";
+const char* WalletSettings::SettingsFile = "settings.ini";
 
 WalletSettings::WalletSettings(const QDir& appDataDir)
-    : m_data{ appDataDir.filePath(SettingsIni), QSettings::IniFormat }
+    : m_data{ appDataDir.filePath(SettingsFile), QSettings::IniFormat }
     , m_appDataDir{appDataDir}
 {
 
@@ -112,24 +110,6 @@ void WalletSettings::setLockTimeout(int value)
             m_data.setValue(LockTimeoutName, value);
         }
         emit lockTimeoutChanged();
-    }
-}
-
-bool WalletSettings::getGenerateGenesys() const
-{
-    Lock lock(m_mutex);
-    return m_data.value(LocalNodeGenerateGenesys, false).toBool();
-}
-
-void WalletSettings::setGenerateGenesys(bool value)
-{
-    if (getGenerateGenesys() != value)
-    {
-        {
-            Lock lock(m_mutex);
-            m_data.setValue(LocalNodeGenerateGenesys, value);
-        }
-        emit localNodeGenerateGenesysChanged();
     }
 }
 
@@ -280,7 +260,7 @@ void WalletSettings::reportProblem()
     zip.open(QuaZip::mdCreate);
 
     // save settings.ini
-    zipLocalFile(zip, m_appDataDir.filePath(SettingsIni));
+    zipLocalFile(zip, m_appDataDir.filePath(SettingsFile));
 
     // save .cfg
     zipLocalFile(zip, QDir(QDir::currentPath()).filePath(WalletCfg));
