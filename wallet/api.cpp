@@ -45,8 +45,8 @@ namespace beam
     WalletApi::WalletApi(IWalletApiHandler& handler)
         : _handler(handler)
     {
-#define REG_FUNC(strct, name) \
-        _methods[name] = BIND_THIS_MEMFN(on##strct##Message);
+#define REG_FUNC(api, name) \
+        _methods[name] = BIND_THIS_MEMFN(on##api##Message);
 
         WALLET_API_METHODS(REG_FUNC)
 
@@ -62,6 +62,30 @@ namespace beam
         _handler.onMessage(id, createAddress);
     }
 
+    void WalletApi::onSendMessage(int id, const nlohmann::json& params)
+    {
+        Send send;
+        _handler.onMessage(id, send);
+    }
+
+    void WalletApi::onReplaceMessage(int id, const nlohmann::json& params)
+    {
+        Replace replace;
+        _handler.onMessage(id, replace);
+    }
+
+    void WalletApi::onStatusMessage(int id, const nlohmann::json& params)
+    {
+        Status status;
+        _handler.onMessage(id, status);
+    }
+
+    void WalletApi::onSplitMessage(int id, const nlohmann::json& params)
+    {
+        Split split;
+        _handler.onMessage(id, split);
+    }
+
     void WalletApi::onBalanceMessage(int id, const nlohmann::json& params)
     {
         Balance balance;
@@ -74,8 +98,31 @@ namespace beam
     void WalletApi::onGetUtxoMessage(int id, const nlohmann::json& params)
     {
         GetUtxo getUtxo;
-
         _handler.onMessage(id, getUtxo);
+    }
+
+    void WalletApi::onLockMessage(int id, const nlohmann::json& params)
+    {
+        Lock lock;
+        _handler.onMessage(id, lock);
+    }
+
+    void WalletApi::onUnlockMessage(int id, const nlohmann::json& params)
+    {
+        Unlock unlock;
+        _handler.onMessage(id, unlock);
+    }
+
+    void WalletApi::onCreateUtxoMessage(int id, const nlohmann::json& params)
+    {
+        CreateUtxo createUtxo;
+        _handler.onMessage(id, createUtxo);
+    }
+
+    void WalletApi::onPollMessage(int id, const nlohmann::json& params)
+    {
+        Poll poll;
+        _handler.onMessage(id, poll);
     }
 
     void WalletApi::getResponse(int id, const Balance::Response& res, json& msg)

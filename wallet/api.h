@@ -25,9 +25,17 @@ namespace beam
     using json = nlohmann::json;
 
 #define WALLET_API_METHODS(macro) \
-    macro(CreateAddress, "create_address") \
-    macro(Balance, "balance") \
-    macro(GetUtxo, "get_utxo")
+    macro(CreateAddress,    "create_address") \
+    macro(Send,             "send") \
+    macro(Replace,          "replace") \
+    macro(Status,           "status") \
+    macro(Split,            "split") \
+    macro(Balance,          "balance") \
+    macro(GetUtxo,          "get_utxo") \
+    macro(Lock,             "lock") \
+    macro(Unlock,           "unlock") \
+    macro(CreateUtxo,       "create_utxo") \
+    macro(Poll,             "poll")
 
     struct CreateAddress
     {
@@ -36,6 +44,38 @@ namespace beam
         struct Response
         {
             WalletID address;
+        };
+    };
+
+    struct Send
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct Replace
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct Status
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct Split
+    {
+        struct Response
+        {
+
         };
     };
 
@@ -58,13 +98,45 @@ namespace beam
         };
     };
 
+    struct Lock
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct Unlock
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct CreateUtxo
+    {
+        struct Response
+        {
+
+        };
+    };
+
+    struct Poll
+    {
+        struct Response
+        {
+
+        };
+    };
+
     class IWalletApiHandler
     {
     public:
         virtual void onInvalidJsonRpc(const json& msg) = 0;
 
-#define MESSAGE_FUNC(strct, name) \
-        virtual void onMessage(int id, const strct& data) = 0;
+#define MESSAGE_FUNC(api, name) \
+        virtual void onMessage(int id, const api& data) = 0;
 
         WALLET_API_METHODS(MESSAGE_FUNC)
 
@@ -76,8 +148,8 @@ namespace beam
     public:
         WalletApi(IWalletApiHandler& handler);
 
-#define RESPONSE_FUNC(strct, name) \
-        void getResponse(int id, const strct::Response& data, json& msg);
+#define RESPONSE_FUNC(api, name) \
+        void getResponse(int id, const api::Response& data, json& msg);
 
         WALLET_API_METHODS(RESPONSE_FUNC)
 
@@ -87,8 +159,8 @@ namespace beam
 
     private:
 
-#define MESSAGE_FUNC(strct, name) \
-        void on##strct##Message(int id, const json& msg);
+#define MESSAGE_FUNC(api, name) \
+        void on##api##Message(int id, const json& msg);
 
         WALLET_API_METHODS(MESSAGE_FUNC)
 

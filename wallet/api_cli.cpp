@@ -149,6 +149,12 @@ namespace beam
                 serialize_json_msg(_lineProtocol, msg);
             }
 
+
+            void onMessage(int id, const Send& data) override {}
+            void onMessage(int id, const Replace& data) override {}
+            void onMessage(int id, const Status& data) override {}
+            void onMessage(int id, const Split& data) override {}
+
             void onMessage(int id, const Balance& data) override 
             {
                 LOG_DEBUG() << "Balance(" << id << "," << data.type << "," << std::to_string(data.address) << ")";
@@ -159,10 +165,11 @@ namespace beam
                 serialize_json_msg(_lineProtocol, msg);
             }
 
-            void onMessage(int id, const GetUtxo& data) override
-            {
-                LOG_DEBUG() << "GetUtxo()";
-            }
+            void onMessage(int id, const GetUtxo& data) override {}
+            void onMessage(int id, const Lock& data) override {}
+            void onMessage(int id, const Unlock& data) override {}
+            void onMessage(int id, const CreateUtxo& data) override {}
+            void onMessage(int id, const Poll& data) override {}
 
             bool on_raw_message(void* data, size_t size) 
             {
