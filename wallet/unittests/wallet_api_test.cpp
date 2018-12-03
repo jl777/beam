@@ -68,8 +68,9 @@ namespace
     {
         void onInvalidJsonRpc(const json& msg) override {}
         
-        void onMessage(int id, const CreateAddress& data) override {}
-        void onMessage(int id, const Balance& data) override {}
+#define MESSAGE_FUNC(strct, name) virtual void onMessage(int id, const strct& data) override {};
+        WALLET_API_METHODS(MESSAGE_FUNC)
+#undef MESSAGE_FUNC
     };
 
     void testInvalidJsonRpc(jsonFunc func, const std::string& msg)
@@ -127,7 +128,8 @@ namespace
             WALLET_CHECK(walletID.IsValid());
 
             json res;
-            api.getCreateAddressResponse(123, walletID, res);
+            CreateAddress::Response response{ walletID };
+            api.getResponse(123, response, res);
             testResultHeader(res);
 
             cout << res["result"] << endl;
@@ -168,7 +170,8 @@ namespace
 
         {
             json res;
-            api.getBalanceResponse(123, 80000000, res);
+            Balance::Response balance{80000000};
+            api.getResponse(123, balance, res);
             testResultHeader(res);
 
             WALLET_CHECK(res["id"] == 123);

@@ -45,74 +45,56 @@ namespace beam
     WalletApi::WalletApi(IWalletApiHandler& handler)
         : _handler(handler)
     {
-        _methods["create_address"] = BIND_THIS_MEMFN(createAddressMethod);
-        _methods["balance"] = BIND_THIS_MEMFN(balanceMethod);
+#define REG_FUNC(strct, name) \
+        _methods[name] = BIND_THIS_MEMFN(on##strct##Message);
+
+        WALLET_API_METHODS(REG_FUNC)
+
+#undef REG_FUNC
     };
 
 
-    void WalletApi::createAddressMethod(const nlohmann::json& msg)
+    void WalletApi::onCreateAddressMessage(int id, const nlohmann::json& params)
     {
-        LOG_DEBUG() << "createAddressMethod()";
-
-        auto params = msg["params"];
-
         CreateAddress createAddress;
-
         createAddress.metadata = params["metadata"];
 
-        _handler.onMessage(msg["id"], createAddress);
+        _handler.onMessage(id, createAddress);
     }
 
-    void WalletApi::balanceMethod(const nlohmann::json& msg)
+    void WalletApi::onBalanceMessage(int id, const nlohmann::json& params)
     {
-        LOG_DEBUG() << "balanceMethod()";
-
-        auto params = msg["params"];
-
         Balance balance;
         balance.type = params["type"];
         balance.address.FromHex(params["addr"]);
 
-        _handler.onMessage(msg["id"], balance);
+        _handler.onMessage(id, balance);
     }
 
-    void getResponse(int id, const CreateAddress::Response& data, json& msg)
+    void WalletApi::onGetUtxoMessage(int id, const nlohmann::json& params)
+    {
+        GetUtxo getUtxo;
+
+        _handler.onMessage(id, getUtxo);
+    }
+
+    void WalletApi::getResponse(int id, const Balance::Response& res, json& msg)
     {
         msg = json
         {
             {"jsonrpc", "2.0"},
             {"id", id},
-            {"result", std::to_string(data.address)}
+            {"result", res.amount}
         };
     }
 
-    void getResponse(int id, const Balance::Response& data, json& msg)
+    void WalletApi::getResponse(int id, const CreateAddress::Response& res, json& msg)
     {
         msg = json
         {
             {"jsonrpc", "2.0"},
             {"id", id},
-            {"result", data.amount}
-        };
-    }
-
-    void WalletApi::getBalanceResponse(int id, const Amount& amount, json& msg)
-    {
-        msg = json
-        {
-            {"jsonrpc", "2.0"},
-            {"id", id},
-            {"result", amount}
-        };
-    }
-
-    void WalletApi::getCreateAddressResponse(int id, const WalletID& address, json& msg)
-    {
-        msg = json
-        {
-            {"jsonrpc", "2.0"},
-            {"id", id},
-            {"result", std::to_string(address)}
+            {"result", std::to_string(res.address)}
         };
     }
 
@@ -132,7 +114,7 @@ namespace beam
 
             try
             {
-                _methods[msg["method"]](msg);
+                _methods[msg["method"]](msg["id"], msg["params"]);
             }
             catch (const nlohmann::detail::exception& e)
             {

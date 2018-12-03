@@ -139,22 +139,29 @@ namespace beam
 
             void onMessage(int id, const CreateAddress& data) override 
             {
-                LOG_DEBUG() << "onCreateAddressMessage(" << id << "," << data.metadata << ")";
+                LOG_DEBUG() << "CreateAddress(" << id << "," << data.metadata << ")";
 
                 WalletAddress address = wallet::createAddress(_walletDB);
 
                 json msg;
-                _api.getCreateAddressResponse(id, address.m_walletID, msg);
+                CreateAddress::Response response{ address.m_walletID };
+                _api.getResponse(id, response, msg);
                 serialize_json_msg(_lineProtocol, msg);
             }
 
             void onMessage(int id, const Balance& data) override 
             {
-                LOG_DEBUG() << "onBalanceMessage(" << id << "," << data.type << "," << std::to_string(data.address) << ")";
+                LOG_DEBUG() << "Balance(" << id << "," << data.type << "," << std::to_string(data.address) << ")";
 
                 json msg;
-                _api.getBalanceResponse(id, wallet::getAvailable(_walletDB), msg);
+                Balance::Response response{wallet::getAvailable(_walletDB)};
+                _api.getResponse(id, response, msg);
                 serialize_json_msg(_lineProtocol, msg);
+            }
+
+            void onMessage(int id, const GetUtxo& data) override
+            {
+                LOG_DEBUG() << "GetUtxo()";
             }
 
             bool on_raw_message(void* data, size_t size) 

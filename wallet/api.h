@@ -24,6 +24,11 @@ namespace beam
 {
     using json = nlohmann::json;
 
+#define WALLET_API_METHODS(macro) \
+    macro(CreateAddress, "create_address") \
+    macro(Balance, "balance") \
+    macro(GetUtxo, "get_utxo")
+
     struct CreateAddress
     {
         std::string metadata;
@@ -45,13 +50,25 @@ namespace beam
         };
     };
 
+    struct GetUtxo
+    {
+        struct Response
+        {
+
+        };
+    };
+
     class IWalletApiHandler
     {
     public:
         virtual void onInvalidJsonRpc(const json& msg) = 0;
 
-        virtual void onMessage(int id, const CreateAddress& data) = 0;
-        virtual void onMessage(int id, const Balance& data) = 0;
+#define MESSAGE_FUNC(strct, name) \
+        virtual void onMessage(int id, const strct& data) = 0;
+
+        WALLET_API_METHODS(MESSAGE_FUNC)
+
+#undef MESSAGE_FUNC
     };
 
     class WalletApi
@@ -59,21 +76,26 @@ namespace beam
     public:
         WalletApi(IWalletApiHandler& handler);
 
-        void getResponse(int id, const CreateAddress::Response& data, json& msg);
-        void getResponse(int id, const Balance::Response& data, json& msg);
+#define RESPONSE_FUNC(strct, name) \
+        void getResponse(int id, const strct::Response& data, json& msg);
 
-        void getCreateAddressResponse(int id, const WalletID& address, json& msg);
-        void getBalanceResponse(int id, const Amount& amount, json& msg);
+        WALLET_API_METHODS(RESPONSE_FUNC)
+
+#undef RESPONSE_FUNC
 
         bool parse(const char* data, size_t size);
 
     private:
 
-        void createAddressMethod(const json& msg);
-        void balanceMethod(const json& msg);
+#define MESSAGE_FUNC(strct, name) \
+        void on##strct##Message(int id, const json& msg);
+
+        WALLET_API_METHODS(MESSAGE_FUNC)
+
+#undef MESSAGE_FUNC
 
     private:
         IWalletApiHandler& _handler;
-        std::map<std::string, std::function<void(const json& msg)>> _methods;
+        std::map<std::string, std::function<void(int id, const json& msg)>> _methods;
     };
 }
