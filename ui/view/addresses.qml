@@ -67,27 +67,43 @@ ColumnLayout {
             model: viewModel.activeAddresses
             visible: false
 
-            /*sortIndicatorVisible: true
-            sortIndicatorColumn: 1
+            sortIndicatorVisible: true
+            sortIndicatorColumn: 4
             sortIndicatorOrder: Qt.DescendingOrder
 
             Binding{
                 target: viewModel
-                property: "sortRole"
-                value: transactionsView.getColumn(transactionsView.sortIndicatorColumn).role
+                property: "activeAddrSortRole"
+                value: activeAddressesView.getColumn(activeAddressesView.sortIndicatorColumn).role
             }
 
             Binding{
                 target: viewModel
-                property: "sortOrder"
-                value: transactionsView.sortIndicatorOrder
-            }*/
+                property: "activeAddrSortOrder"
+                value: activeAddressesView.sortIndicatorOrder
+            }
         }
 
         AddressTable {
             id: expiredAddressesView
             model: viewModel.expiredAddresses
             visible: false
+
+            sortIndicatorVisible: true
+            sortIndicatorColumn: 4
+            sortIndicatorOrder: Qt.DescendingOrder
+
+            Binding{
+                target: viewModel
+                property: "expiredAddrSortRole"
+                value: expiredAddressesView.getColumn(expiredAddressesView.sortIndicatorColumn).role
+            }
+
+            Binding{
+                target: viewModel
+                property: "expiredAddrSortOrder"
+                value: expiredAddressesView.sortIndicatorOrder
+            }
         }
         
         CustomTableView {
@@ -189,8 +205,8 @@ ColumnLayout {
                                 icon.source: "qrc:/assets/icon-actions.svg"
                                 ToolTip.text: qsTr("Actions")
                                 onClicked: {
-                                    //txContextMenu.transaction = viewModel.transactions[styleData.row];
-                                    txContextMenu.popup();
+                                    contextMenu.address = contactsView.model[styleData.row].address;
+                                    contextMenu.popup();
                                 }
                             }
                         }
@@ -199,35 +215,25 @@ ColumnLayout {
             }
 
             ContextMenu {
-                id: txContextMenu
+                id: contextMenu
                 modal: true
                 dim: false
-                //property TxObject transaction
+                property string address
                 Action {
                     text: qsTr("transactions list")
                     icon.source: "qrc:/assets/icon-transactions.svg"
                     onTriggered: {
-                        /*if (!!txContextMenu.transaction)
-                        {
-                            viewModel.copyToClipboard(txContextMenu.transaction.user);
-                        }*/
+                        // go to list transaction (wallet page)
+                        main.updateItem(0)
                     }
                 }
                 Action {
-                    text: qsTr("delete")
+                    text: qsTr("delete contact")
                     icon.source: "qrc:/assets/icon-delete.svg"
-                    enabled: !!txContextMenu.transaction && txContextMenu.transaction.canDelete
                     onTriggered: {
-                        /*deleteTransactionDialog.text = qsTr("The transaction will be deleted. This operation can not be undone");
-                        deleteTransactionDialog.open();*/
+                        viewModel.deleteAddress(contextMenu.address);
                     }
                 }
-                /*Connections {
-                    target: deleteTransactionDialog
-                    onAccepted: {
-                        viewModel.deleteTx(txContextMenu.transaction);
-                    }
-                }*/
             }
         }
     }
