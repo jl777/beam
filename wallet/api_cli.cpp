@@ -141,8 +141,7 @@ namespace beam
             {
                 LOG_DEBUG() << "onCreateAddressMessage(" << id << "," << data.metadata << ")";
 
-                WalletAddress address;
-                _walletDB->createAddress(address);
+                WalletAddress address = wallet::createAddress(_walletDB);
 
                 json msg;
                 _api.getCreateAddressResponse(id, address.m_walletID, msg);
