@@ -113,6 +113,14 @@ namespace beam
 		Amount get_EmissionEx(Height, Height& hEnd, Amount base) const;
 	};
 
+	namespace SwitchCommitment
+	{
+		void Create(ECC::Scalar::Native& sk, Key::IKdf&, const Key::IDV&);
+		void Create(ECC::Scalar::Native& sk, ECC::Point::Native& comm, Key::IKdf&, const Key::IDV&);
+		void Create(ECC::Scalar::Native& sk, ECC::Point& comm, Key::IKdf&, const Key::IDV&);
+		void Recover(ECC::Point::Native& comm, Key::IPKdf&, const Key::IDV&);
+	}
+
 	struct TxElement
 	{
 		ECC::Point m_Commitment;
@@ -188,7 +196,6 @@ namespace beam
 		std::unique_ptr<ECC::RangeProof::Confidential>	m_pConfidential;
 		std::unique_ptr<ECC::RangeProof::Public>		m_pPublic;
 
-		void Create(const ECC::Scalar::Native&, Amount, bool bPublic = false);
 		void Create(ECC::Scalar::Native&, Key::IKdf&, const Key::IDV&, bool bPublic = false);
 
 		bool Recover(Key::IPKdf&, Key::IDV&) const;
@@ -201,7 +208,6 @@ namespace beam
 		COMPARISON_VIA_CMP
 
 	private:
-		void CreateInternal(const ECC::Scalar::Native&, Amount, bool bPublic, Key::IKdf*, const Key::ID*);
 		void get_SeedKid(ECC::uintBig&, Key::IPKdf&) const;
 	};
 

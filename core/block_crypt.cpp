@@ -113,6 +113,70 @@ namespace beam
 	}
 
 	/////////////
+	// SwitchCommitment
+	namespace SwitchCommitment
+	{
+		void get_sk1(ECC::Scalar::Native& res, const ECC::Point::Native& comm0, const ECC::Point::Native& sk0_J)
+		{
+			ECC::Oracle()
+				<< comm0
+				<< sk0_J
+				>> res;
+		}
+
+		void CreateInternal(ECC::Scalar::Native& sk, ECC::Point::Native& comm, bool bComm, Key::IKdf& kdf, const Key::IDV& kidv)
+		{
+			kdf.DeriveKey(sk, kidv);
+
+			comm = ECC::Commitment(sk, kidv.m_Value);
+			ECC::Point::Native sk0_J = ECC::Context::get().J * sk;
+
+			ECC::Scalar::Native sk1;
+			get_sk1(sk1, comm, sk0_J);
+
+			sk += sk1;
+			if (bComm)
+				comm += ECC::Context::get().G * sk1;
+		}
+
+		void Create(ECC::Scalar::Native& sk, Key::IKdf& kdf, const Key::IDV& kidv)
+		{
+			ECC::Point::Native comm;
+			CreateInternal(sk, comm, false, kdf, kidv);
+		}
+
+		void Create(ECC::Scalar::Native& sk, ECC::Point::Native& comm, Key::IKdf& kdf, const Key::IDV& kidv)
+		{
+			CreateInternal(sk, comm, true, kdf, kidv);
+		}
+
+		void Create(ECC::Scalar::Native& sk, ECC::Point& comm, Key::IKdf& kdf, const Key::IDV& kidv)
+		{
+			ECC::Point::Native comm2;
+			Create(sk, comm2, kdf, kidv);
+			comm = comm2;
+		}
+
+		void Recover(ECC::Point::Native& res, Key::IPKdf& pkdf, const Key::IDV& kidv)
+		{
+			ECC::Hash::Value hv;
+			kidv.get_Hash(hv);
+
+			ECC::Point::Native sk0_J;
+			pkdf.DerivePKeyJ(sk0_J, hv);
+			pkdf.DerivePKeyG(res, hv);
+			res += ECC::Context::get().H * kidv.m_Value;
+
+			ECC::Scalar::Native sk1;
+			get_sk1(sk1, res, sk0_J);
+
+			res += ECC::Context::get().G * sk1;
+		}
+
+
+	} // namespace SwitchCommitment
+
+	/////////////
 	// Output
 	bool Output::IsValid(ECC::Point::Native& comm) const
 	{
@@ -167,32 +231,21 @@ namespace beam
 		return 0;
 	}
 
-	void Output::CreateInternal(const ECC::Scalar::Native& sk, Amount v, bool bPublic, Key::IKdf* pKdf, const Key::ID* pKid)
+	void Output::Create(ECC::Scalar::Native& sk, Key::IKdf& kdf, const Key::IDV& kidv, bool bPublic /* = false */)
 	{
-		m_Commitment = ECC::Commitment(sk, v);
+		SwitchCommitment::Create(sk, m_Commitment, kdf, kidv);
 
 		ECC::Oracle oracle;
 		oracle << m_Incubation;
 
 		ECC::RangeProof::CreatorParams cp;
-		cp.m_Kidv.m_Value = v;
+		cp.m_Kidv = kidv;
+		get_SeedKid(cp.m_Seed.V, kdf);
 
-		if (pKdf)
-		{
-			assert(pKid);
-			Cast::Down<Key::ID>(cp.m_Kidv) = *pKid;
-			get_SeedKid(cp.m_Seed.V, *pKdf);
-		}
-		else
-		{
-			ZeroObject(Cast::Down<Key::ID>(cp.m_Kidv));
-			ECC::Hash::Processor() << "outp" << sk << v >> cp.m_Seed.V;
-		}
-
-		if (bPublic)
+		if (bPublic || m_Coinbase)
 		{
 			m_pPublic.reset(new ECC::RangeProof::Public);
-			m_pPublic->m_Value = v;
+			m_pPublic->m_Value = kidv.m_Value;
 			m_pPublic->Create(sk, cp, oracle);
 		}
 		else
@@ -200,17 +253,6 @@ namespace beam
 			m_pConfidential.reset(new ECC::RangeProof::Confidential);
 			m_pConfidential->Create(sk, cp, oracle);
 		}
-	}
-
-	void Output::Create(ECC::Scalar::Native& sk, Key::IKdf& kdf, const Key::IDV& kidv, bool bPublic /* = false */)
-	{
-		kdf.DeriveKey(sk, kidv);
-		CreateInternal(sk, kidv.m_Value, bPublic || m_Coinbase, &kdf, &kidv);
-	}
-
-	void Output::Create(const ECC::Scalar::Native& sk, Amount v, bool bPublic /* = false */)
-	{
-		CreateInternal(sk, v, bPublic, NULL, NULL);
 	}
 
 	void Output::get_SeedKid(ECC::uintBig& seed, Key::IPKdf& kdf) const
@@ -232,27 +274,21 @@ namespace beam
 		oracle << m_Incubation;
 
 		if (m_pPublic)
-		{
 		    m_pPublic->Recover(cp);
-		}
-		else if (!(m_pConfidential && m_pConfidential->Recover(oracle, cp)))
+		else
 		{
-			return false;
+			if (!(m_pConfidential && m_pConfidential->Recover(oracle, cp)))
+				return false;
 		}
 
 		// reconstruct the commitment
-		ECC::Mode::Scope scope(ECC::Mode::Fast);
-
-		ECC::Hash::Value hv;
-		cp.m_Kidv.get_Hash(hv);
+		ECC::Mode::Scope scope(ECC::Mode::Fast); //?
 
 		ECC::Point::Native comm, comm2;
-		kdf.DerivePKey(comm, hv);
-
-		comm += ECC::Context::get().H * cp.m_Kidv.m_Value;
 
 		if (!comm2.Import(m_Commitment))
 			return false;
+		SwitchCommitment::Recover(comm, kdf, cp.m_Kidv);
 
 		comm = -comm;
 		comm += comm2;
@@ -799,7 +835,7 @@ namespace beam
 			<< (uint32_t) Block::PoW::K
 			<< (uint32_t) Block::PoW::N
 			<< (uint32_t) Block::PoW::NonceType::nBits
-			<< uint32_t(12) // increment this whenever we change something in the protocol
+			<< uint32_t(13) // increment this whenever we change something in the protocol
 #ifndef BEAM_TESTNET
             << "masternet"
 #endif
@@ -1159,8 +1195,10 @@ namespace beam
 		TxKernel::Ptr pKrn;
 		AddCoinbaseAndKrn(kdf, h, pOutp, pKrn);
 
-		m_Txv.m_vOutputs.push_back(std::move(pOutp));
-		m_Txv.m_vKernels.push_back(std::move(pKrn));
+		if (pOutp)
+			m_Txv.m_vOutputs.push_back(std::move(pOutp));
+		if (pKrn)
+			m_Txv.m_vKernels.push_back(std::move(pKrn));
 	}
 
 	void Block::Builder::AddFees(Key::IKdf& kdf, Height h, Amount fees, Output::Ptr& pOutp)
