@@ -213,11 +213,11 @@ namespace beam
     };
 }
 
-using namespace beam;
-namespace po = boost::program_options;
-
 int main(int argc, char* argv[])
 {
+    using namespace beam;
+    namespace po = boost::program_options;
+
     auto logger = Logger::create(LOG_LEVEL_VERBOSE, LOG_LEVEL_VERBOSE);
 
     try
