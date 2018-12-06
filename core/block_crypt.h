@@ -36,6 +36,7 @@ namespace beam
 	struct HeightRange
 	{
 		// Convention: inclusive, i.e. both endings are part of the range.
+		// m_Min == m_Max means the range includes a single height. Therefore (m_Min > m_Max) is NOT invalid, it just denotes an empty range.
 		Height m_Min;
 		Height m_Max;
 
@@ -100,6 +101,7 @@ namespace beam
 		uint32_t MaxRollbackHeight = 1440; // 1 day roughly
 		uint32_t MacroblockGranularity = 720; // i.e. should be created for heights that are multiples of this. This should make it more likely for different nodes to have the same macroblocks
 
+		ECC::Hash::Value Prehistoric; // Prev hash of the 1st block
 		ECC::Hash::Value TreasuryChecksum;
 		ECC::Hash::Value Checksum;
 
