@@ -97,3 +97,17 @@ CMakeSettings.json
 /utility/unittest/bridge_test
 /utility/unittest/config_test
 beam/wallet.dat
+
+*.zip
+
+boost_1_68_0/*
+
+cm
+
+wallet/version.h
+
+CPackSourceConfig.cmake
+
+CPackConfig.cmake
+
+beam/version.h
