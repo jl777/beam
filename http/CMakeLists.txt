@@ -9,4 +9,4 @@ add_library(http STATIC ${HTTP_SRC})
 add_dependencies(http utility)
 target_link_libraries(http utility)
 
-#add_subdirectory(unittests)
+add_subdirectory(unittests)

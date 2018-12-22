@@ -59,4 +59,4 @@ if(BEAM_USE_GPU)
     target_link_libraries(miner_client gpu_tools)
 endif()
 
-#add_subdirectory(unittests)
+add_subdirectory(unittests)

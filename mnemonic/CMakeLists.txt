@@ -15,4 +15,4 @@ target_include_directories(${TARGET_NAME} PRIVATE ${PROJECT_SOURCE_DIR}}/externa
 add_dependencies(${TARGET_NAME} core)
 target_link_libraries(${TARGET_NAME} core )
 
-#add_subdirectory(unittests)
+add_subdirectory(unittests)
