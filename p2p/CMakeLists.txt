@@ -8,4 +8,4 @@ add_library(p2p STATIC ${P2P_SRC})
 add_dependencies(p2p utility)
 target_link_libraries(p2p utility)
 
-add_subdirectory(unittest)
+#add_subdirectory(unittest)

@@ -28,4 +28,4 @@ target_include_directories(core PUBLIC ${PROJECT_SOURCE_DIR}/3rdparty)
 
 include_directories(${PROJECT_SOURCE_DIR}/core)
 
-add_subdirectory(unittest)
+#add_subdirectory(unittest)

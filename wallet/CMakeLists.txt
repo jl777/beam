@@ -39,4 +39,4 @@ add_executable(wallet_api api_cli.cpp)
 add_dependencies(wallet_api wallet utility wallet_api_proto)
 target_link_libraries(wallet_api wallet utility wallet_api_proto)
 
-add_subdirectory(unittests)
+#add_subdirectory(unittests)
