@@ -153,3 +153,7 @@ wallet/unittests/wallet_api_test
 wallet/unittests/wallet_db_test
 
 wallet/wallet_api
+
+beam/beam-node
+
+beam/beam-node.cfg

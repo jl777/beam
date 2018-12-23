@@ -2384,9 +2384,11 @@ void Node::Peer::SendTx(Transaction::Ptr& ptx, bool bFluff)
     proto::NewTransaction msg;
     msg.m_Fluff = bFluff;
 
-    //TemporarySwap scope(msg.m_Transaction, ptx);
+#ifdef __APPLE
     std::swap(msg.m_Transaction, ptx); // jl777
-    
+#else
+    TemporarySwap scope(msg.m_Transaction, ptx);
+#endif
     Send(msg);
 }
 
