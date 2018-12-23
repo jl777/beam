@@ -2384,7 +2384,7 @@ void Node::Peer::SendTx(Transaction::Ptr& ptx, bool bFluff)
     proto::NewTransaction msg;
     msg.m_Fluff = bFluff;
 
-#if __APPLE
+#ifdef __APPLE__
     std::swap(msg.m_Transaction, ptx); // jl777
 #else
     TemporarySwap scope(msg.m_Transaction, ptx);
@@ -2978,7 +2978,7 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
         Block::SystemState::Full s;
 
         {
-#if __APPLE
+#ifdef __APPLE__
             std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
             std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3008,7 +3008,7 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
 
             if (bRetrying)
             {
-#if __APPLE
+#ifdef __APPLE__
                 std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
                 std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3064,7 +3064,7 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
             }
         }
 
-#if __APPLE
+#ifdef __APPLE__
         std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
         std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3085,7 +3085,7 @@ void Node::Miner::HardAbortSafe()
 {
     m_pTaskToFinalize.reset();
 
-#if __APPLE
+#ifdef __APPLE__
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
     std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3191,7 +3191,7 @@ void Node::Miner::StartMining(Task::Ptr&& pTask)
     pTask->m_hvNonceSeed = get_ParentObj().NextNonce();
 
     // let's mine it.
-#if __APPLE
+#ifdef __APPLE__
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
     std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3249,7 +3249,7 @@ void Node::Miner::OnMinedExternal()
         return;
     }
 
-#if __APPLE
+#ifdef __APPLE__
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
     std::scoped_lock<std::mutex> scope(m_Mutex);
@@ -3275,7 +3275,7 @@ void Node::Miner::OnMined()
 {
     Task::Ptr pTask;
     {
-#if __APPLE
+#ifdef __APPLE__
         std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
         std::scoped_lock<std::mutex> scope(m_Mutex);
