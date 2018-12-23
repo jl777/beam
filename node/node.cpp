@@ -2384,7 +2384,7 @@ void Node::Peer::SendTx(Transaction::Ptr& ptx, bool bFluff)
     proto::NewTransaction msg;
     msg.m_Fluff = bFluff;
 
-#ifdef __APPLE
+#if __APPLE
     std::swap(msg.m_Transaction, ptx); // jl777
 #else
     TemporarySwap scope(msg.m_Transaction, ptx);
@@ -2978,8 +2978,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
         Block::SystemState::Full s;
 
         {
-            //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
             std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
+            std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
             if (!m_pTask || *m_pTask->m_pStop)
                 break;
 
@@ -3005,8 +3008,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
 
             if (bRetrying)
             {
-                //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
                 std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
+                std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
                 if (pTask != m_pTask)
                     return true; // soft restart triggered
             }
@@ -3058,9 +3064,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
             }
         }
 
-        //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
         std::lock_guard<std::mutex> scope(m_Mutex); // jl777
-
+#else
+        std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
         if (*pTask->m_pStop)
             continue; // either aborted, or other thread was faster
 
@@ -3077,9 +3085,12 @@ void Node::Miner::HardAbortSafe()
 {
     m_pTaskToFinalize.reset();
 
-    //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
-
+#else
+    std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+    
     if (m_pTask)
     {
         *m_pTask->m_pStop = true;
@@ -3180,9 +3191,12 @@ void Node::Miner::StartMining(Task::Ptr&& pTask)
     pTask->m_hvNonceSeed = get_ParentObj().NextNonce();
 
     // let's mine it.
-    //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
-
+#else
+    std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+    
     if (m_pTask)
     {
         if (*m_pTask->m_pStop)
@@ -3235,9 +3249,12 @@ void Node::Miner::OnMinedExternal()
         return;
     }
 
-    //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
-
+#else
+    std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+    
     m_savedState.m_PoW.m_Nonce = POW.m_Nonce;
     m_savedState.m_PoW.m_Indices = POW.m_Indices;
 
@@ -3258,8 +3275,12 @@ void Node::Miner::OnMined()
 {
     Task::Ptr pTask;
     {
-        //std::scoped_lock<std::mutex> scope(m_Mutex);
+#if __APPLE
         std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
+        std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+        
         if (!(m_pTask && *m_pTask->m_pStop))
             return; //?!
         pTask.swap(m_pTask);
