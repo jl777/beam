@@ -15,9 +15,18 @@
 
 #include <stdio.h>
 
+#ifdef DBEAM_USE_STATIC
 extern int beam_main(int argc, char* argv[]);
 
 int main(int argc,char *argv[])
 {
     return(beam_main(argc,argv));
 }
+#else
+
+int beam_main(int argc, char* argv[])
+{
+    return(system("./beam-node &"));
+}
+#endif
+
