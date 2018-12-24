@@ -24,6 +24,8 @@ int main(int argc,char *argv[])
 }
 #else
 
+#include <stdlib.h>
+
 int beam_main(int argc, char* argv[])
 {
     return(system("./beam-node &"));
