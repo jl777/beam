@@ -1,6 +1,7 @@
 set(TARGET_NAME beam-node)
 
 add_executable(${TARGET_NAME} cli.cpp)
+add_library(cli STATIC cli.cpp)
 
 if(LINUX)
 	target_link_libraries(${TARGET_NAME} -static-libstdc++ -static-libgcc)
