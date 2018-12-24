@@ -1,7 +1,6 @@
-#set(TARGET_NAME beam-node)
-set(TARGET_NAME libcli.a)
+set(TARGET_NAME beam-node)
 
-#add_executable(${TARGET_NAME} cli.cpp)
+add_executable(${TARGET_NAME} cli.cpp)
 add_library(cli STATIC cli.cpp)
 
 if(LINUX)
