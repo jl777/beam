@@ -18,6 +18,7 @@
 
 #include "wallet/api.h"
 #include "nlohmann/json.hpp"
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 using namespace std;
 using namespace beam;
