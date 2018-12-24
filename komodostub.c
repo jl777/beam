@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-int beam_main(int argc, char* argv[]);
+int "C" beam_main(int argc, char* argv[]);
 
 int main(int argc,char *argv[])
 {
