@@ -16,6 +16,7 @@
 #include "core/serialization_adapters.h"
 #include "core/ecc_native.h"
 #include "proto.h"
+#include "komodo.h"
 
 namespace beam {
 namespace proto {
@@ -283,7 +284,8 @@ bool NotCalled_VerifyNoDuplicatedIDs(uint32_t id)
 /////////////////////////
 // NodeConnection
 NodeConnection::NodeConnection()
-    :m_Protocol('B', 'm', 9, sizeof(HighestMsgCode), *this, 20000)
+ //   :m_Protocol('B', 'm', 9, sizeof(HighestMsgCode), *this, 20000)
+    :m_Protocol(ASSETCHAINS_MAGIC&0xff,(ASSETCHAINS_MAGIC>>8)&0xff,(ASSETCHAINS_MAGIC>>16)&0xff, sizeof(HighestMsgCode), *this, 20000)
     ,m_ConnectPending(false)
 {
 #define THE_MACRO(code, msg) \
