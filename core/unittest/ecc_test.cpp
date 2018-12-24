@@ -21,6 +21,8 @@
 #include "../aes.h"
 #include "../proto.h"
 
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
+
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
 #pragma GCC diagnostic ignored "-Wunused-result"
 #endif

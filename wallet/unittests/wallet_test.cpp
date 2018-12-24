@@ -37,6 +37,7 @@
 #include "core/proto.h"
 #include <boost/filesystem.hpp>
 #include <boost/intrusive/list.hpp>
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 using namespace beam;
 using namespace std;

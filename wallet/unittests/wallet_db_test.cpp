@@ -20,6 +20,7 @@
 #include "utility/logger.h"
 #include <boost/filesystem.hpp>
 #include <numeric>
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 using namespace std;
 using namespace ECC;

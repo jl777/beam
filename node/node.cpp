@@ -927,6 +927,8 @@ Node::~Node()
     LOG_INFO() << "Node stopping...";
 
     m_Miner.HardAbortSafe();
+	if (m_Miner.m_External.m_pSolver)
+		m_Miner.m_External.m_pSolver->stop();
 
     for (size_t i = 0; i < m_Miner.m_vThreads.size(); i++)
     {
@@ -1047,8 +1049,10 @@ void Node::Peer::OnConnectedSecure()
     msgLogin.m_CfgChecksum = Rules::get().Checksum; // checksum of all consesnsus related configuration
     msgLogin.m_Flags =
         proto::LoginFlags::SpreadingTransactions | // indicate ability to receive and broadcast transactions
-        proto::LoginFlags::Bbs | // indicate ability to receive and broadcast BBS messages
         proto::LoginFlags::SendPeers; // request a another node to periodically send a list of recommended peers
+
+	if (m_This.m_Cfg.m_Bbs)
+		msgLogin.m_Flags |= proto::LoginFlags::Bbs; // indicate ability to receive and broadcast BBS messages
 
     Send(msgLogin);
 
@@ -2384,8 +2388,11 @@ void Node::Peer::SendTx(Transaction::Ptr& ptx, bool bFluff)
     proto::NewTransaction msg;
     msg.m_Fluff = bFluff;
 
+#ifdef __APPLE__
+    std::swap(msg.m_Transaction, ptx); // jl777
+#else
     TemporarySwap scope(msg.m_Transaction, ptx);
-
+#endif
     Send(msg);
 }
 
@@ -2600,6 +2607,9 @@ void Node::Peer::OnMsg(proto::GetExternalAddr&& msg)
 
 void Node::Peer::OnMsg(proto::BbsMsg&& msg)
 {
+	if (!m_This.m_Cfg.m_Bbs)
+		ThrowUnexpected();
+
     Timestamp t = getTimestamp();
     Timestamp t0 = t - m_This.m_Cfg.m_Timeout.m_BbsMessageTimeout_s;
     Timestamp t1 = t + m_This.m_Cfg.m_Timeout.m_BbsMessageMaxAhead_s;
@@ -2659,6 +2669,9 @@ void Node::Peer::OnMsg(proto::BbsMsg&& msg)
 
 void Node::Peer::OnMsg(proto::BbsHaveMsg&& msg)
 {
+	if (!m_This.m_Cfg.m_Bbs)
+		ThrowUnexpected();
+
     NodeDB& db = m_This.m_Processor.get_DB();
     NodeDB::WalkerBbs wlk(db);
 
@@ -2676,7 +2689,10 @@ void Node::Peer::OnMsg(proto::BbsHaveMsg&& msg)
 
 void Node::Peer::OnMsg(proto::BbsGetMsg&& msg)
 {
-    NodeDB& db = m_This.m_Processor.get_DB();
+	if (!m_This.m_Cfg.m_Bbs)
+		ThrowUnexpected();
+
+	NodeDB& db = m_This.m_Processor.get_DB();
     NodeDB::WalkerBbs wlk(db);
 
     wlk.m_Data.m_Key = msg.m_Key;
@@ -2698,7 +2714,10 @@ void Node::Peer::SendBbsMsg(const NodeDB::WalkerBbs::Data& d)
 
 void Node::Peer::OnMsg(proto::BbsSubscribe&& msg)
 {
-    Bbs::Subscription::InPeer key;
+	if (!m_This.m_Cfg.m_Bbs)
+		ThrowUnexpected();
+
+	Bbs::Subscription::InPeer key;
     key.m_Channel = msg.m_Channel;
 
     Bbs::Subscription::PeerSet::iterator it = m_Subscriptions.find(key);
@@ -2730,7 +2749,10 @@ void Node::Peer::OnMsg(proto::BbsSubscribe&& msg)
 
 void Node::Peer::OnMsg(proto::BbsPickChannel&& msg)
 {
-    proto::BbsPickChannelRes msgOut;
+	if (!m_This.m_Cfg.m_Bbs)
+		ThrowUnexpected();
+
+	proto::BbsPickChannelRes msgOut;
     msgOut.m_Channel = m_This.m_Bbs.m_RecommendedChannel;
     Send(msgOut);
 }
@@ -2944,7 +2966,7 @@ void Node::Miner::Initialize(IExternalPOW* externalPOW)
         }
     }
 
-    m_externalPOW = externalPOW;
+	m_External.m_pSolver = externalPOW;
 
     SetTimer(0, true); // async start mining, since this method may be followed by ImportMacroblock.
 }
@@ -2975,7 +2997,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
         Block::SystemState::Full s;
 
         {
+#ifdef __APPLE__
+            std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
             std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
             if (!m_pTask || *m_pTask->m_pStop)
                 break;
 
@@ -3001,7 +3027,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
 
             if (bRetrying)
             {
+#ifdef __APPLE__
+                std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
                 std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
                 if (pTask != m_pTask)
                     return true; // soft restart triggered
             }
@@ -3053,8 +3083,11 @@ void Node::Miner::OnRefresh(uint32_t iIdx)
             }
         }
 
+#ifdef __APPLE__
+        std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
         std::scoped_lock<std::mutex> scope(m_Mutex);
-
+#endif
         if (*pTask->m_pStop)
             continue; // either aborted, or other thread was faster
 
@@ -3071,13 +3104,27 @@ void Node::Miner::HardAbortSafe()
 {
     m_pTaskToFinalize.reset();
 
+#ifdef __APPLE__
+    std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
     std::scoped_lock<std::mutex> scope(m_Mutex);
-
+#endif
+    
     if (m_pTask)
     {
         *m_pTask->m_pStop = true;
-        m_pTask = NULL;
+        m_pTask.reset();
     }
+
+	if (m_External.m_pTask)
+	{
+		assert(*m_External.m_pTask->m_pStop); // should be the same stop inficator
+
+		assert(m_External.m_pSolver);
+		m_External.m_pSolver->stop_current();
+
+		m_External.m_pTask.reset();
+	}
 }
 
 void Node::Miner::SetTimer(uint32_t timeout_ms, bool bHard)
@@ -3173,8 +3220,12 @@ void Node::Miner::StartMining(Task::Ptr&& pTask)
     pTask->m_hvNonceSeed = get_ParentObj().NextNonce();
 
     // let's mine it.
+#ifdef __APPLE__
+    std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
     std::scoped_lock<std::mutex> scope(m_Mutex);
-
+#endif
+    
     if (m_pTask)
     {
         if (*m_pTask->m_pStop)
@@ -3197,59 +3248,65 @@ void Node::Miner::StartMining(Task::Ptr&& pTask)
 
 void Node::Miner::OnRefreshExternal()
 {
-    if (!m_externalPOW) return;
+    if (!m_External.m_pSolver)
+		return;
+
+	if (m_External.m_pTask && !*m_External.m_pTask->m_pStop)
+		return; // ignore 'soft-reset' in case of external mining. Current protocol doesn't support this
 
     // NOTE the mutex is locked here
-
     LOG_INFO() << "New job for external miner";
 
-    m_savedState = m_pTask->m_Hdr;
+	m_External.m_pTask = m_pTask;
 
-    // TODO
     auto fnCancel = []() { return false; };
 
     Merkle::Hash hv;
-    m_savedState.get_HashForPoW(hv);
+	m_pTask->m_Hdr.get_HashForPoW(hv);
 
-    m_externalPOW->new_job(std::to_string(++m_jobID), hv, m_savedState.m_PoW, BIND_THIS_MEMFN(OnMinedExternal), fnCancel);
+	m_External.m_pSolver->new_job(std::to_string(++m_External.m_jobID), hv, m_pTask->m_Hdr.m_PoW, BIND_THIS_MEMFN(OnMinedExternal), fnCancel);
 }
 
 void Node::Miner::OnMinedExternal()
 {
-    if (!m_externalPOW) return;
+	std::string jobID;
+	Block::PoW POW;
 
-    std::string jobID;
-    Block::PoW POW;
-    m_externalPOW->get_last_found_block(jobID, POW);
+	assert(m_External.m_pSolver);
+	m_External.m_pSolver->get_last_found_block(jobID, POW);
 
-    if (jobID != std::to_string(m_jobID)) {
-        LOG_INFO() << "expired solution from external miner";
-        return;
-    }
-
+#ifdef __APPLE__
+    std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
     std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+    
+	if (!m_External.m_pTask || *m_External.m_pTask->m_pStop || (jobID != std::to_string(m_External.m_jobID)))
+		return; // already cancelled
 
-    m_savedState.m_PoW.m_Nonce = POW.m_Nonce;
-    m_savedState.m_PoW.m_Indices = POW.m_Indices;
+	m_External.m_pTask->m_Hdr.m_PoW.m_Nonce = POW.m_Nonce;
+	m_External.m_pTask->m_Hdr.m_PoW.m_Indices = POW.m_Indices;
 
-    if (!m_savedState.IsValidPoW()) {
+    if (!m_External.m_pTask->m_Hdr.IsValidPoW()) {
         LOG_INFO() << "invalid solution from external miner";
         return;
     }
 
-    m_pTask->m_Hdr = m_savedState; // save the result
+	m_pTask = m_External.m_pTask;
     *m_pTask->m_pStop = true;
-
     m_pEvtMined->post();
-
-    //TODO restart miner (as inside threads cycle)
 }
 
 void Node::Miner::OnMined()
 {
     Task::Ptr pTask;
     {
+#ifdef __APPLE__
+        std::lock_guard<std::mutex> scope(m_Mutex); // jl777
+#else
         std::scoped_lock<std::mutex> scope(m_Mutex);
+#endif
+        
         if (!(m_pTask && *m_pTask->m_pStop))
             return; //?!
         pTask.swap(m_pTask);

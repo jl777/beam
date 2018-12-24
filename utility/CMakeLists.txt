@@ -92,5 +92,6 @@ endif()
 if(BEAM_USE_GPU)
     add_subdirectory(gpu)
 endif()
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory(unittest)

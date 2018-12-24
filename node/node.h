@@ -22,6 +22,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/intrusive/set.hpp>
 #include <condition_variable>
+#include <mutex>
 
 namespace beam
 {
@@ -73,6 +74,8 @@ struct Node
 		// 0: single threaded
 		// negative: number of cores minus number of mining threads.
 		int m_VerificationThreads = 0;
+
+		bool m_Bbs = true;
 
 		struct HistoryCompression
 		{
@@ -592,7 +595,7 @@ private:
 			ECC::Hash::Value m_hvNonceSeed; // immutable
 		};
 
-		bool IsEnabled() { return m_externalPOW || !m_vThreads.empty(); }
+		bool IsEnabled() { return m_External.m_pSolver || !m_vThreads.empty(); }
 
 		void Initialize(IExternalPOW* externalPOW=nullptr);
 
@@ -612,10 +615,13 @@ private:
 		std::mutex m_Mutex;
 		Task::Ptr m_pTask; // currently being-mined
 
-		// external miner stuff
-		IExternalPOW* m_externalPOW=nullptr;
-		uint64_t m_jobID=0;
-		Block::SystemState::Full m_savedState;
+		struct External
+		{
+			IExternalPOW* m_pSolver = nullptr;
+			Task::Ptr m_pTask;
+			uint64_t m_jobID = 0;
+
+		} m_External;
 
 		io::Timer::Ptr m_pTimer;
 		bool m_bTimerPending = false;

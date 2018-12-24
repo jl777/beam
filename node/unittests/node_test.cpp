@@ -28,6 +28,7 @@
     #define LOG_VERBOSE_ENABLED 0
 #endif
 #include "utility/logger.h"
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 namespace ECC {
 

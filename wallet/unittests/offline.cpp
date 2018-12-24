@@ -19,6 +19,7 @@
 #include "utility/logger.h"
 #include <future>
 #include <boost/filesystem.hpp>
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 namespace beam {
 

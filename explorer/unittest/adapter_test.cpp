@@ -18,6 +18,7 @@
 #include <future>
 #include <boost/filesystem.hpp>
 #include <wallet/unittests/util.h>
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 namespace beam {
 
