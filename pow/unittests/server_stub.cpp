@@ -24,6 +24,8 @@ using namespace beam;
 
 std::unique_ptr<IExternalPOW> server;
 int idInt = 0;
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
+
 Merkle::Hash hash;
 Block::PoW POW;
 static const unsigned TIMER_MSEC = 280000;
