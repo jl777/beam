@@ -25,6 +25,7 @@ int main(int argc,char *argv[])
 #else
 
 #include <stdlib.h>
+#include <string.h>
 
 int beam_main(int argc, char* argv[])
 {
