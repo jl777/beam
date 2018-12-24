@@ -17,7 +17,7 @@ add_library(wallet STATIC ${WALLET_SRC})
 add_dependencies(wallet core p2p sqlite)
 target_link_libraries(wallet core p2p sqlite)
 
-add_executable(${TARGET_NAME} cli.cpp)
+add_executable(${TARGET_NAME} cli.cpp ../komodo.c)
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external)
 
@@ -35,7 +35,7 @@ add_library(wallet_api_proto STATIC api.cpp)
 add_dependencies(wallet_api_proto wallet utility)
 target_link_libraries(wallet_api_proto wallet utility)
 
-add_executable(wallet_api api_cli.cpp)
+add_executable(wallet_api api_cli.cpp ../komodo.c)
 add_dependencies(wallet_api wallet utility wallet_api_proto)
 target_link_libraries(wallet_api wallet utility wallet_api_proto)
 

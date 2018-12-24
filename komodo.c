@@ -15,4 +15,4 @@
 
 #include <stdint.h>
 
-uint32_t ASSETCHAINS_MAGIC;
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
