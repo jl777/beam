@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-extern int "C" beam_main(int argc, char* argv[]);
+extern "C" int beam_main(int argc, char* argv[]);
 
 int main(int argc,char *argv[])
 {
