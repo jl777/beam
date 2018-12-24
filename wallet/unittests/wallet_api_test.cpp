@@ -145,6 +145,7 @@ namespace
 
     void testBalanceJsonRpc(const std::string& msg)
     {
+<<<<<<< HEAD
         class WalletApiHandler : public WalletApiHandlerBase
         {
         public:
@@ -178,6 +179,100 @@ namespace
             WALLET_CHECK(res["id"] == 123);
             WALLET_CHECK(res["result"] == 80000000);
         }
+=======
+        class WalletApiHandler : public WalletApiHandlerBase
+        {
+        public:
+
+            void onInvalidJsonRpc(const json& msg) override
+            {
+                WALLET_CHECK(!"invalid balance api json!!!");
+
+                cout << msg["error"]["message"] << endl;
+            }
+
+            void onMessage(int id, const Balance& data) override
+            {
+                WALLET_CHECK(id > 0);
+            }
+        };
+
+        WalletApiHandler handler;
+        WalletApi api(handler);
+
+        WALLET_CHECK(api.parse(msg.data(), msg.size()));
+
+        {
+            json res;
+            Balance::Response balance{123, 456, 789};
+            api.getResponse(123, balance, res);
+            testResultHeader(res);
+
+            WALLET_CHECK(res["id"] == 123);
+            WALLET_CHECK(res["result"] != nullptr);
+            WALLET_CHECK(res["result"]["available"] == 123);
+            WALLET_CHECK(res["result"]["in_progress"] == 456);
+            WALLET_CHECK(res["result"]["locked"] == 789);
+        }
+    }
+
+    void testGetUtxoJsonRpc(const std::string& msg)
+    {
+        class WalletApiHandler : public WalletApiHandlerBase
+        {
+        public:
+
+            void onInvalidJsonRpc(const json& msg) override
+            {
+                WALLET_CHECK(!"invalid get_utxo api json!!!");
+
+                cout << msg["error"]["message"] << endl;
+            }
+
+            void onMessage(int id, const GetUtxo& data) override
+            {
+                WALLET_CHECK(id > 0);
+            }
+        };
+
+        WalletApiHandler handler;
+        WalletApi api(handler);
+
+        WALLET_CHECK(api.parse(msg.data(), msg.size()));
+
+        {
+            json res;
+            GetUtxo::Response getUtxo;
+
+            const int Count = 10;
+            for(int i = 0; i < Count; i++)
+            {
+                Coin coin{ Amount(1234+i) };
+                coin.m_ID.m_Type = Key::Type::Regular;
+                coin.m_ID.m_Idx = 132+i;
+                coin.m_createHeight = 1000;
+                coin.m_maturity = 60;
+                getUtxo.utxos.push_back(coin);
+            }
+
+            api.getResponse(123, getUtxo, res);
+            testResultHeader(res);
+
+            WALLET_CHECK(res["id"] == 123);
+            auto& result = res["result"];
+            WALLET_CHECK(result != nullptr);
+            WALLET_CHECK(result.size() == Count);
+
+            for (int i = 0; i < Count; i++)
+            {
+                WALLET_CHECK(result[i]["id"] == 132 + i);
+                WALLET_CHECK(result[i]["amount"] == 1234 + i);
+                WALLET_CHECK(result[i]["type"] == "norm");
+                WALLET_CHECK(result[i]["height"] == 1000);
+                WALLET_CHECK(result[i]["maturity"] == 60);
+            }
+        }
+>>>>>>> BeamMW/master
     }
 }
 
@@ -188,6 +283,62 @@ int main()
         testErrorHeader(msg);
 
         WALLET_CHECK(msg["id"] == nullptr);
+        WALLET_CHECK(msg["error"]["code"] == INVALID_JSON_RPC);
+    }, JSON_CODE({}));
+
+    testInvalidJsonRpc([](const json& msg)
+    {
+        testErrorHeader(msg);
+
+        WALLET_CHECK(msg["id"] == nullptr);
+<<<<<<< HEAD
+        WALLET_CHECK(msg["error"]["code"] == INVALID_JSON_RPC);
+    }, JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "method" : 1,
+        "params" : "bar"
+    }));
+
+    testInvalidJsonRpc([](const json& msg)
+    {
+        testErrorHeader(msg);
+
+        WALLET_CHECK(msg["id"] == 123);
+        WALLET_CHECK(msg["error"]["code"] == NOTFOUND_JSON_RPC);
+    }, JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 123,
+        "method" : "balance123",
+        "params" : "bar"
+    }));
+
+    testBalanceJsonRpc(JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "balance",
+        "params" : 
+        {
+            "type" : 0,
+            "addr" : "472e17b0419055ffee3b3813b98ae671579b0ac0dcd6f1a23b11a75ab148cc67"
+        }
+    }));
+
+    testCreateAddressJsonRpc(JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "create_address",
+        "params" :
+        {
+            "lifetime" : 24,
+            "metadata" : "<meta>custom user data</meta>"
+        }
+    }));
+
+=======
         WALLET_CHECK(msg["error"]["code"] == INVALID_JSON_RPC);
     }, JSON_CODE({}));
 
@@ -242,5 +393,31 @@ int main()
         }
     }));
 
+    testInvalidJsonRpc([](const json& msg)
+    {
+        testErrorHeader(msg);
+
+        WALLET_CHECK(msg["id"] == 12345);
+        WALLET_CHECK(msg["error"]["code"] == INVALID_JSON_RPC);
+    }, JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "create_address",
+        "params" :
+        {
+            "metadata" : "<meta>custom user data</meta>"
+        }
+    }));
+
+    testGetUtxoJsonRpc(JSON_CODE(
+    {
+        "jsonrpc": "2.0",
+        "id" : 12345,
+        "method" : "get_utxo",
+        "params" : {}
+    }));
+
+>>>>>>> BeamMW/master
     return WALLET_CHECK_RESULT;
 }

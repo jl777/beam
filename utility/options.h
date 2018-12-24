@@ -60,6 +60,7 @@ namespace beam
 		extern const char* KEY_SUBKEY;
 		extern const char* KEY_OWNER;
 		extern const char* KEY_MINE;
+		extern const char* BBS_ENABLE;
         extern const char* NEW_ADDRESS;
         extern const char* CANCEL_TX;
         extern const char* SEND;
@@ -67,7 +68,6 @@ namespace beam
         extern const char* NEW_ADDRESS_LABEL;
         extern const char* TX_HISTORY;
         extern const char* TX_ID;
-        extern const char* WALLET_SEED;
         extern const char* WALLET_PHRASE;
         extern const char* GENERATE_PHRASE;
         extern const char* FEE;
@@ -104,7 +104,7 @@ namespace beam
         ALL_OPTIONS     = GENERAL_OPTIONS | NODE_OPTIONS | WALLET_OPTIONS | UI_OPTIONS
     };
 
-    po::options_description createOptionsDescription(int flags = ALL_OPTIONS);
+    std::pair<po::options_description, po::options_description> createOptionsDescription(int flags = ALL_OPTIONS);
 
     po::variables_map getOptions(int argc, char* argv[], const char* configFile, const po::options_description& options, bool walletOptions = false);
 
