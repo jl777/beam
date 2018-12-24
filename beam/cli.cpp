@@ -317,7 +317,7 @@ int main_impl(int argc, char* argv[])
     return 0;
 }
 
-"C" int beam_main(int argc, char* argv[]) {
+extern "C" int beam_main(int argc, char* argv[]) {
 #ifdef _WIN32
     return main_impl(argc, argv);
 #else
