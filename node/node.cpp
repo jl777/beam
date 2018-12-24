@@ -3277,22 +3277,17 @@ void Node::Miner::OnMinedExternal()
 
 	std::scoped_lock<std::mutex> scope(m_Mutex);
 
-<<<<<<< HEAD
 #ifdef __APPLE__
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
     std::scoped_lock<std::mutex> scope(m_Mutex);
 #endif
     
-    m_savedState.m_PoW.m_Nonce = POW.m_Nonce;
-    m_savedState.m_PoW.m_Indices = POW.m_Indices;
-=======
 	if (!m_External.m_pTask || *m_External.m_pTask->m_pStop || (jobID != std::to_string(m_External.m_jobID)))
 		return; // already cancelled
 
 	m_External.m_pTask->m_Hdr.m_PoW.m_Nonce = POW.m_Nonce;
 	m_External.m_pTask->m_Hdr.m_PoW.m_Indices = POW.m_Indices;
->>>>>>> BeamMW/master
 
     if (!m_External.m_pTask->m_Hdr.IsValidPoW()) {
         LOG_INFO() << "invalid solution from external miner";
