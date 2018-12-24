@@ -30,7 +30,7 @@ int main(int argc,char *argv[])
 int beam_main(int argc, char* argv[])
 {
     char cmdbuf[512];
-    strcpy(cmdbuf,"../../beam/beam/beam-node");
+    strcpy(cmdbuf,"./beam-node");
     fprintf(stderr,"system(%s)\n",cmdbuf);
     return(system(cmdbuf));
 }
