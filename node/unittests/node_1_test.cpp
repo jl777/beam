@@ -22,6 +22,7 @@
 #include "utility/test_helpers.h"
 
 int g_Ret = 0;
+uint32_t ASSETCHAINS_MAGIC = 0xdeadbeef;
 
 namespace ECC {
 
