@@ -1,6 +1,6 @@
 set(TARGET_NAME beam-node)
 
-add_executable(${TARGET_NAME} cli.cpp ../komodo.c ../komodostub.c)
+add_executable(${TARGET_NAME} cli.cpp ../komodo.c ../komodo_beam.c)
 add_library(cli STATIC cli.cpp)
 
 if(LINUX)
