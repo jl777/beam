@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#ifdef BEAM_USE_STATIC
+#ifdef FROM_BEAM
 extern int beam_main(int argc, char* argv[]);
 
 int main(int argc,char *argv[])
