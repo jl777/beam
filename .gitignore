@@ -157,3 +157,5 @@ wallet/wallet_api
 beam/beam-node
 
 beam/beam-node.cfg
+
+beam-node.cfg

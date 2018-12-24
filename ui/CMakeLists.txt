@@ -34,6 +34,7 @@ endif()
 
 set(UI_SRC
 	ui.cpp
+    ../komodo.c
 	translator.h
 	translator.cpp
 	viewmodel/start_view.h
