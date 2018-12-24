@@ -3275,8 +3275,6 @@ void Node::Miner::OnMinedExternal()
 	assert(m_External.m_pSolver);
 	m_External.m_pSolver->get_last_found_block(jobID, POW);
 
-	std::scoped_lock<std::mutex> scope(m_Mutex);
-
 #ifdef __APPLE__
     std::lock_guard<std::mutex> scope(m_Mutex); // jl777
 #else
