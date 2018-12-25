@@ -638,7 +638,8 @@ int main_impl(int argc, char* argv[])
                             }
 
 							receiverWalletID.FromHex(vm[cli::RECEIVER_ADDR].as<string>());
-
+                            auto recvaddress = m_WalletDB->getAddress(receiverWalletID);
+                            fprintf(stderr,"recvaddress.(%s)\n",std::to_string(address.m_walletID));
                             auto signedAmount = vm[cli::AMOUNT].as<double>();
                             if (signedAmount < 0)
                             {
