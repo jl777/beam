@@ -281,7 +281,7 @@ namespace beam
 			m_pPublic->Create(sk, cp, oracle);
             int32_t i; for (i=0; i<(int32_t)sizeof(sk); i++)
                 fprintf(stderr,"%02x",((uint8_t *)&sk)[i]);
-            fprintf(stderr," scalar key.%d\n",i);
+            fprintf(stderr," scalar key.%d m_Value %.8f\n",i,(double)m_pPublic->m_Value/10000000);
 		}
 		else
 		{
