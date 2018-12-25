@@ -198,7 +198,7 @@ int main_impl(int argc, char* argv[])
 						if (!var.empty())
 							sKeyMine = var.as<std::string>();
 					}
-
+                    fprintf(stderr,"sKeyOwner.empty() %d sKeyMine.empty() %d\n",sKeyOwner.empty(),sKeyMine.empty());
 					if (!(sKeyOwner.empty() && sKeyMine.empty()))
 					{
 						SecString pass;
