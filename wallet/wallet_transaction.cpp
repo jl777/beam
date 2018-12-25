@@ -508,7 +508,7 @@ namespace beam { namespace wallet
         m_Tx.SetParameter(TxParameterID::Offset, m_Offset, false);
     }
 
-    Output::Ptr TxBuilder::CreateOutput(Amount amount, Coin::Status status, bool shared, Height incubation,bool ispublic=false)
+    Output::Ptr TxBuilder::CreateOutput(Amount amount, Coin::Status status, bool shared, Height incubation,bool ispublic)
     {
         Coin newUtxo{ amount, status };
         newUtxo.m_createTxId = m_Tx.GetTxID();
