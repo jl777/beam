@@ -178,6 +178,7 @@ int main_impl(int argc, char* argv[])
                     {
                         node.m_Cfg.m_UseGpu = false;
                         node.m_Cfg.m_MiningThreads = vm[cli::MINING_THREADS].as<uint32_t>();
+                        fprintf(stddrr,"mining threads.%d\n",(int32_t)node.m_Cfg.m_MiningThreads);
                     }
 #else
 					node.m_Cfg.m_MiningThreads = vm[cli::MINING_THREADS].as<uint32_t>();
