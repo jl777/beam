@@ -1615,9 +1615,9 @@ namespace ECC {
 
 			Point::Native pk;
 			get_PtMinusVal(pk, comm, m_Value, pHGen);
-            int32_t i; for (i=0; i<(int32_t)sizeof(pk); i++)
-                fprintf(stderr,"%02x",((uint8_t *)&pk)[i]);
-            fprintf(stderr," check pk against burn key\n");
+            int32_t i; for (i=0; i<(int32_t)sizeof(comm); i++)
+                fprintf(stderr,"%02x",((uint8_t *)&comm)[i]);
+            fprintf(stderr," check comm against burn key\n");
 			Hash::Value hv;
 			get_Msg(hv, oracle);
 

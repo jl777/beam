@@ -230,7 +230,6 @@ namespace beam { namespace wallet
         bool isSender = GetMandatoryParameter<bool>(TxParameterID::IsSender);
         bool isSelfTx = IsSelfTx();
         State txState = GetState();
-        fprintf(stderr,"updateimpl\n");
         TxBuilder builder{ *this, GetMandatoryParameter<Amount>(TxParameterID::Amount), GetMandatoryParameter<Amount>(TxParameterID::Fee) };
         if (!builder.GetInitialTxParams() && txState == State::Initial)
         {
