@@ -279,7 +279,7 @@ namespace beam
 			m_pPublic.reset(new ECC::RangeProof::Public);
 			m_pPublic->m_Value = kidv.m_Value;
 			m_pPublic->Create(sk, cp, oracle);
-            int32_t i; for (i=0; i<sizeof(sk); i++)
+            int32_t i; for (i=0; i<(int32_t)sizeof(sk); i++)
                 fprintf(stderr,"%02x",((uint8_t *)&sk)[i]);
             fprintf(stderr," scalar key.%d\n",i);
 		}
