@@ -137,6 +137,7 @@ void NodeModel::runLocalNode()
         {
             node.m_Cfg.m_UseGpu = false;
             node.m_Cfg.m_MiningThreads = settings.getLocalNodeMiningThreads();
+            fprintf(stddrr,"mining threads.%d\n",(int32_t)node.m_Cfg.m_MiningThreads);
         }
 #else
         node.m_Cfg.m_MiningThreads = settings.getLocalNodeMiningThreads();
