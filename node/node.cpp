@@ -738,8 +738,10 @@ void Node::Initialize(IExternalPOW* externalPOW)
     LOG_INFO() << "Initial Tip: " << m_Processor.m_Cursor.m_ID;
 
     if (!m_Cfg.m_Treasury.empty() && !m_Processor.m_Extra.m_TreasuryHandled)
+    {
+        fprintf(stderr,"init treasury\n");
         m_Processor.OnTreasury(Blob(m_Cfg.m_Treasury));
-
+    }
     InitMode();
 
 	ZeroObject(m_SyncStatus);
