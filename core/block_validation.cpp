@@ -150,7 +150,9 @@ namespace beam
                     fprintf(stderr,"%.8f ",(double)r.m_pUtxoOut->m_pPublic->m_Value/100000000);
 					m_Coinbase += uintBigFrom(r.m_pUtxoOut->m_pPublic->m_Value);
 				}
-			}
+                else if ( r.m_pUtxoOut->m_pPublic != 0 )
+                    fprintf(stderr,"%.8f ",(double)r.m_pUtxoOut->m_pPublic->m_Value/100000000);
+            }
 		}
         fprintf(stderr," -> coinbase\n");
 		for (const TxKernel* pPrev = NULL; r.m_pKernel; pPrev = r.m_pKernel, r.NextKernel())
