@@ -3156,18 +3156,15 @@ void Node::Miner::OnTimer()
 
 bool Node::Miner::Restart()
 {
-    fprintf(stderr,"Node::Miner::Restart\n");
     if (!IsEnabled())
         return false; //  n/a
-    fprintf(stderr,"Node::Miner::Restart2\n");
 
-    if (0 && !get_ParentObj().m_Processor.m_Extra.m_TreasuryHandled)
+    if (!get_ParentObj().m_Processor.m_Extra.m_TreasuryHandled)
         return false;
 
     m_pTaskToFinalize.reset();
 
     const Keys& keys = get_ParentObj().m_Keys;
-    fprintf(stderr,"Node::Miner::Restart3 finalizer.%p keys.%d\n",m_pFinalizer,!keys.m_pMiner);
 
     if (m_pFinalizer)
     {
@@ -3179,7 +3176,6 @@ bool Node::Miner::Restart()
         if (!keys.m_pMiner)
             return false; // offline mining is disabled
     }
-    fprintf(stderr,"Node::Miner::Restart4\n");
 
     NodeProcessor::BlockContext bc(
         get_ParentObj().m_TxPool,
