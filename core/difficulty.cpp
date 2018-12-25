@@ -15,6 +15,18 @@
 #include "difficulty.h"
 #include <cmath>
 
+bool dbgmemis0(const void* p, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+        fprintf(stderr,"%02x",((const uint8_t*)p)[i]);
+    fprintf(stderr," n.%d\n",(int32_t)n);
+    
+    for (size_t i = 0; i < n; i++)
+        if (((const uint8_t*)p)[i])
+            return false;
+    return true;
+}
+
 namespace beam
 {
 	void Difficulty::Pack(uint32_t order, uint32_t mantissa)
@@ -51,7 +63,7 @@ namespace beam
 
 		static_assert(!(s_MantissaBits & 7), ""); // fix the following code lines to support non-byte-aligned mantissa size
 
-		return memis0(a.m_pData, Raw::nBytes - (s_MantissaBits >> 3));
+		return dbgmemis0(a.m_pData, Raw::nBytes - (s_MantissaBits >> 3));
 	}
 
 	void Difficulty::Unpack(Raw& res) const
