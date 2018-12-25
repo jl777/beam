@@ -187,8 +187,8 @@ namespace beam { namespace wallet
 
         void SelectInputs();
         void AddChangeOutput();
-        void AddOutput(Amount amount, Coin::Status status);
-        Output::Ptr CreateOutput(Amount amount, Coin::Status status, bool shared = false, Height incubation = 0);
+        void AddOutput(Amount amount, Coin::Status status,bool ispublic=false);
+        Output::Ptr CreateOutput(Amount amount, Coin::Status status, bool shared = false, Height incubation = 0,bool ispublic=false);
         void CreateKernel();
         ECC::Point::Native GetPublicExcess() const;
         ECC::Point::Native GetPublicNonce() const;

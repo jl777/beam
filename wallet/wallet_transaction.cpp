@@ -501,14 +501,14 @@ namespace beam { namespace wallet
         AddOutput(m_Change, Coin::Change);
     }
 
-    void TxBuilder::AddOutput(Amount amount, Coin::Status status)
+    void TxBuilder::AddOutput(Amount amount, Coin::Status status,bool ispublic=0)
     {
-        m_Outputs.push_back(CreateOutput(amount, status, m_MinHeight));
+        m_Outputs.push_back(CreateOutput(amount, status, m_MinHeight,0,ispublic));
         m_Tx.SetParameter(TxParameterID::Outputs, m_Outputs, false);
         m_Tx.SetParameter(TxParameterID::Offset, m_Offset, false);
     }
 
-    Output::Ptr TxBuilder::CreateOutput(Amount amount, Coin::Status status, bool shared, Height incubation)
+    Output::Ptr TxBuilder::CreateOutput(Amount amount, Coin::Status status, bool shared, Height incubation,bool ispublic=false)
     {
         Coin newUtxo{ amount, status };
         newUtxo.m_createTxId = m_Tx.GetTxID();
@@ -521,7 +521,7 @@ namespace beam { namespace wallet
 
         Scalar::Native blindingFactor;
         Output::Ptr output = make_unique<Output>();
-        output->Create(blindingFactor, *m_Tx.GetWalletDB()->get_ChildKdf(newUtxo.m_ID.m_SubIdx), newUtxo.m_ID, *m_Tx.GetWalletDB()->get_MasterKdf());
+        output->Create(blindingFactor, *m_Tx.GetWalletDB()->get_ChildKdf(newUtxo.m_ID.m_SubIdx), newUtxo.m_ID, *m_Tx.GetWalletDB()->get_MasterKdf(),ispublic);
 
         blindingFactor = -blindingFactor;
         m_Offset += blindingFactor;
