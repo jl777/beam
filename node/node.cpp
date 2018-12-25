@@ -764,8 +764,10 @@ void Node::Initialize(IExternalPOW* externalPOW)
 void Node::InitKeys()
 {
     if (!m_Keys.m_pOwner)
+    {
         m_Keys.m_pMiner = NULL; // can't mine without owner view key, because it's used for Tagging
-
+        fprintf(stderr,"clear m_pMiner since there is no m_pOwner\n");
+    }
     if (!m_Keys.m_pGeneric)
     {
         if (m_Keys.m_pMiner)
