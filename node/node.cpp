@@ -2958,6 +2958,7 @@ void Node::Miner::Initialize(IExternalPOW* externalPOW)
 
     if (cfg.m_MiningThreads) {
         m_vThreads.resize(cfg.m_MiningThreads);
+        fprintf(stderr,"Node::Miner::Initialize\n");
         for (uint32_t i = 0; i < cfg.m_MiningThreads; i++) {
             PerThread &pt = m_vThreads[i];
             pt.m_pReactor = io::Reactor::create();
@@ -3131,7 +3132,7 @@ void Node::Miner::SetTimer(uint32_t timeout_ms, bool bHard)
 {
     if (!IsEnabled())
         return;
-
+    fprintf(stderr,"Node::Miner::SetTimer\n");
     if (!m_pTimer)
         m_pTimer = io::Timer::create(io::Reactor::get_Current());
     else
@@ -3150,11 +3151,14 @@ void Node::Miner::OnTimer()
 
 bool Node::Miner::Restart()
 {
+    fprintf(stderr,"Node::Miner::Restart\n");
     if (!IsEnabled())
         return false; //  n/a
+    fprintf(stderr,"Node::Miner::Restart2\n");
 
     if (!get_ParentObj().m_Processor.m_Extra.m_TreasuryHandled)
         return false;
+    fprintf(stderr,"Node::Miner::Restart3\n");
 
     m_pTaskToFinalize.reset();
 
@@ -3168,6 +3172,7 @@ bool Node::Miner::Restart()
     else
         if (!keys.m_pMiner)
             return false; // offline mining is disabled
+    fprintf(stderr,"Node::Miner::Restart4\n");
 
     NodeProcessor::BlockContext bc(
         get_ParentObj().m_TxPool,
@@ -3185,6 +3190,7 @@ bool Node::Miner::Restart()
         LOG_WARNING() << "Block generation failed, can't mine!";
         return false;
     }
+    fprintf(stderr,"Node::Miner::Restart5\n");
 
     Task::Ptr pTask(std::make_shared<Task>());
     Cast::Down<NodeProcessor::GeneratedBlock>(*pTask) = std::move(bc);
