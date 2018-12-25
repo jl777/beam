@@ -100,7 +100,7 @@ namespace beam
 		uint32_t WindowForMedian			= 25; // Timestamp for a block must be (strictly) higher than the median of preceding window
 		Difficulty StartDifficulty			= Difficulty(2 << Difficulty::s_MantissaBits); // FAST start, good for QA
 
-		bool AllowPublicUtxos = false;
+        bool AllowPublicUtxos = true;//false;
 		bool FakePoW = false;
 		bool AllowCA = true;
 		bool DepositForCA = true; // CA emission in exchage for beams. If not specified - the emission is free
