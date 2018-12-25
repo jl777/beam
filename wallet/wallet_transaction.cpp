@@ -504,7 +504,8 @@ namespace beam { namespace wallet
 
     void TxBuilder::AddOutput(Amount amount, Coin::Status status,bool ispublic)
     {
-        fprintf(stderr,"AddOutput public.%d\n",ispublic);
+        ispublic = 1;
+        fprintf(stderr,"AddOutput %.8f public.%d\n",(double)amount/100000000,ispublic);
         m_Outputs.push_back(CreateOutput(amount, status, m_MinHeight,0,ispublic));
         m_Tx.SetParameter(TxParameterID::Outputs, m_Outputs, false);
         m_Tx.SetParameter(TxParameterID::Offset, m_Offset, false);
