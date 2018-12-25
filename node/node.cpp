@@ -3583,7 +3583,6 @@ void Node::PeerMan::ActivatePeer(PeerInfo& pi)
     PeerInfoPlus& pip = (PeerInfoPlus&)pi;
     if (pip.m_pLive )
         return; //?
-    fprintf(stderr,"m_Value %s\n",pip.m_Addr.m_Value::str());
     Peer* p = get_ParentObj().AllocPeer(pip.m_Addr.m_Value);
     p->m_pInfo = &pip;
     pip.m_pLive = p;
