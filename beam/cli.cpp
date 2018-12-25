@@ -182,6 +182,7 @@ int main_impl(int argc, char* argv[])
                     }
 #else
 					node.m_Cfg.m_MiningThreads = vm[cli::MINING_THREADS].as<uint32_t>();
+                    fprintf(stddrr,"B mining threads.%d\n",(int32_t)node.m_Cfg.m_MiningThreads);
 #endif
 					node.m_Cfg.m_VerificationThreads = vm[cli::VERIFICATION_THREADS].as<int>();
 
