@@ -32,7 +32,7 @@ namespace beam { namespace wallet
     TxID GenerateTxID()
     {
         boost::uuids::uuid id = boost::uuids::random_generator()();
-        TxID txID{};
+        TxID txID{}; // jl777 is this guaranteed unique txid?
         copy(id.begin(), id.end(), txID.begin());
         return txID;
     }
@@ -230,6 +230,7 @@ namespace beam { namespace wallet
         bool isSender = GetMandatoryParameter<bool>(TxParameterID::IsSender);
         bool isSelfTx = IsSelfTx();
         State txState = GetState();
+        fprintf(stderr,"updateimpl\n");
         TxBuilder builder{ *this, GetMandatoryParameter<Amount>(TxParameterID::Amount), GetMandatoryParameter<Amount>(TxParameterID::Fee) };
         if (!builder.GetInitialTxParams() && txState == State::Initial)
         {
@@ -503,6 +504,7 @@ namespace beam { namespace wallet
 
     void TxBuilder::AddOutput(Amount amount, Coin::Status status,bool ispublic)
     {
+        fprintf(stderr,"AddOutput public.%d\n",ispublic);
         m_Outputs.push_back(CreateOutput(amount, status, m_MinHeight,0,ispublic));
         m_Tx.SetParameter(TxParameterID::Outputs, m_Outputs, false);
         m_Tx.SetParameter(TxParameterID::Offset, m_Offset, false);
@@ -510,6 +512,7 @@ namespace beam { namespace wallet
 
     Output::Ptr TxBuilder::CreateOutput(Amount amount, Coin::Status status, bool shared, Height incubation,bool ispublic)
     {
+        fprintf(stderr,"CreateOutput public.%d\n",ispublic);
         Coin newUtxo{ amount, status };
         newUtxo.m_createTxId = m_Tx.GetTxID();
         newUtxo.m_createHeight = m_MinHeight;
