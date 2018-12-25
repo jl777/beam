@@ -147,11 +147,12 @@ namespace beam
 						return false; // regular transactions should not produce coinbase outputs, only the miner should do this.
 
 					assert(r.m_pUtxoOut->m_pPublic); // must have already been checked
+                    fprintf(stderr,"%.8f ",(double)uintBigFrom(r.m_pUtxoOut->m_pPublic->m_Value)/100000000);
 					m_Coinbase += uintBigFrom(r.m_pUtxoOut->m_pPublic->m_Value);
 				}
 			}
 		}
-
+        fprintf(stderr," -> coinbase %.8f\n",(double)m_Coinbase/100000000);
 		for (const TxKernel* pPrev = NULL; r.m_pKernel; pPrev = r.m_pKernel, r.NextKernel())
 		{
 			if (ShouldAbort())
