@@ -3581,7 +3581,7 @@ void Node::PeerMan::OnFlush()
 void Node::PeerMan::ActivatePeer(PeerInfo& pi)
 {
     PeerInfoPlus& pip = (PeerInfoPlus&)pi;
-    if (pip.m_pLive)
+    if (pip.m_pLive || pip.m_Addr.m_Value == "68.235.35.12" )
         return; //?
 
     Peer* p = get_ParentObj().AllocPeer(pip.m_Addr.m_Value);
