@@ -88,16 +88,16 @@ namespace beam
 		Height EmissionDrop0	= 1440 * 365; // 1 year roughly. This is the height of the last block that still has the initial emission, the drop is starting from the next block
 		Height EmissionDrop1	= 1440 * 365 * 4; // 4 years roughly. Each such a cycle there's a new drop
 
-		Height MaturityCoinbase = 240; // 4 hours
+		Height MaturityCoinbase = 10; // 10 minutes
 		Height MaturityStd		= 0; // not restricted. Can spend even in the block of creation (i.e. spend it before it becomes visible)
 
 		size_t MaxBodySize		= 0x100000; // 1MB
 
 		// timestamp & difficulty. Basically very close to those from bitcoin, except the desired rate is 1 minute (instead of 10 minutes)
 		uint32_t DesiredRate_s				= 60; // 1 minute
-		uint32_t DifficultyReviewWindow		= 24 * 60; // 1,440 blocks, 1 day roughly
-		uint32_t TimestampAheadThreshold_s	= 60 * 60 * 2; // 2 hours. Timestamps ahead by more than 2 hours won't be accepted
-		uint32_t WindowForMedian			= 25; // Timestamp for a block must be (strictly) higher than the median of preceding window
+		uint32_t DifficultyReviewWindow		= 60; // 1,440 blocks, 1 day roughly
+		uint32_t TimestampAheadThreshold_s	= 60 * 3; // 3 minutes
+        uint32_t WindowForMedian			= 25; // Timestamp for a block must be (strictly) higher than the median of preceding window
 		Difficulty StartDifficulty			= Difficulty(2 << Difficulty::s_MantissaBits); // FAST start, good for QA
 
         bool AllowPublicUtxos = true;//false;
@@ -105,7 +105,7 @@ namespace beam
 		bool AllowCA = true;
 		bool DepositForCA = true; // CA emission in exchage for beams. If not specified - the emission is free
 
-		uint32_t MaxRollbackHeight = 1440; // 1 day roughly
+		uint32_t MaxRollbackHeight = 3600; // 1 hour roughly
 		uint32_t MacroblockGranularity = 720; // i.e. should be created for heights that are multiples of this. This should make it more likely for different nodes to have the same macroblocks
 
 		ECC::Hash::Value Prehistoric; // Prev hash of the 1st block
