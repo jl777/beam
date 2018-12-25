@@ -3165,7 +3165,7 @@ bool Node::Miner::Restart()
     m_pTaskToFinalize.reset();
 
     const Keys& keys = get_ParentObj().m_Keys;
-    fprintf(stderr,"Node::Miner::Restart3 finalizer.%p keys.%d\n",m_pFinalizer,keys.m_pMiner);
+    fprintf(stderr,"Node::Miner::Restart3 finalizer.%p keys.%p\n",m_pFinalizer,keys.m_pMiner);
 
     if (m_pFinalizer)
     {
