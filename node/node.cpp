@@ -736,6 +736,7 @@ void Node::Initialize(IExternalPOW* externalPOW)
 
     LOG_INFO() << "Node ID=" << m_MyPublicID;
     LOG_INFO() << "Initial Tip: " << m_Processor.m_Cursor.m_ID;
+    fprintf(stderr,"check treasury %d %d\n",m_Cfg.m_Treasury.empty(),m_Processor.m_Extra.m_TreasuryHandled);
 
     if (!m_Cfg.m_Treasury.empty() && !m_Processor.m_Extra.m_TreasuryHandled)
     {
