@@ -218,7 +218,7 @@ int main_impl(int argc, char* argv[])
 							std::shared_ptr<HKdf> pKdf = std::make_shared<HKdf>();
 							if (!ks.Import(*pKdf))
 								throw std::runtime_error("miner key import failed");
-
+                            fprintf(stderr,"set m_pMiner\n");
 							node.m_Keys.m_pMiner = pKdf;
 							node.m_Keys.m_nMinerSubIndex = atoi(ks.m_sMeta.c_str());
 						}

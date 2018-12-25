@@ -3173,8 +3173,10 @@ bool Node::Miner::Restart()
             return false; // wait until we receive that outdated finalization
     }
     else
+    {
         if (!keys.m_pMiner)
             return false; // offline mining is disabled
+    }
     fprintf(stderr,"Node::Miner::Restart4\n");
 
     NodeProcessor::BlockContext bc(
