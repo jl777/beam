@@ -26,6 +26,10 @@
 // misc
 bool memis0(const void* p, size_t n)
 {
+    for (size_t i = 0; i < n; i++)
+        fprintf(stderr,"%02x",((const uint8_t*)p)[i]);
+    fprintf(stderr," n.%d\n",n);
+    
 	for (size_t i = 0; i < n; i++)
 		if (((const uint8_t*)p)[i])
 			return false;
