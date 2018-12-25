@@ -738,7 +738,7 @@ void Node::Initialize(IExternalPOW* externalPOW)
     LOG_INFO() << "Initial Tip: " << m_Processor.m_Cursor.m_ID;
     fprintf(stderr,"check treasury %d %d\n",m_Cfg.m_Treasury.empty(),m_Processor.m_Extra.m_TreasuryHandled);
 
-    if (m_Cfg.m_Treasury.empty() && !m_Processor.m_Extra.m_TreasuryHandled)
+    if (!m_Cfg.m_Treasury.empty() && !m_Processor.m_Extra.m_TreasuryHandled)
     {
         fprintf(stderr,"init treasury\n");
         m_Processor.OnTreasury(Blob(m_Cfg.m_Treasury));
@@ -3159,7 +3159,7 @@ bool Node::Miner::Restart()
         return false; //  n/a
     fprintf(stderr,"Node::Miner::Restart2\n");
 
-    if (!get_ParentObj().m_Processor.m_Extra.m_TreasuryHandled)
+    if (0 && !get_ParentObj().m_Processor.m_Extra.m_TreasuryHandled)
         return false;
     fprintf(stderr,"Node::Miner::Restart3\n");
 
